@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [currentOTP, setCurrentOTP] = useState<string>('');
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     // Load data from localStorage on startup
@@ -60,39 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (storedTransactions) {
       setTransactions(JSON.parse(storedTransactions));
-    } else {
-      // Initialize with sample transactions
-      const sampleTransactions: Transaction[] = [
-        {
-          id: '1',
-          accountId: 'acc1',
-          type: 'credit',
-          amount: 2500.00,
-          description: 'Direct Deposit - Salary',
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          balance: 5247.83
-        },
-        {
-          id: '2',
-          accountId: 'acc1',
-          type: 'debit',
-          amount: 89.99,
-          description: 'Online Purchase - Amazon',
-          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          balance: 5157.84
-        },
-        {
-          id: '3',
-          accountId: 'acc2',
-          type: 'credit',
-          amount: 50.00,
-          description: 'Transfer from Checking',
-          date: new Date().toISOString(),
-          balance: 1250.00
-        }
-      ];
-      setTransactions(sampleTransactions);
-      localStorage.setItem('bankTransactions', JSON.stringify(sampleTransactions));
     }
   }, []);
 
@@ -132,7 +100,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       
       setUser(newUser);
+      setIsNewUser(false);
       localStorage.setItem('bankUser', JSON.stringify(newUser));
+      
+      // Load sample transactions only for existing users (login)
+      const storedTransactions = localStorage.getItem('bankTransactions');
+      if (!storedTransactions) {
+        const sampleTransactions: Transaction[] = [
+          {
+            id: '1',
+            accountId: 'acc1',
+            type: 'credit',
+            amount: 2500.00,
+            description: 'Direct Deposit - Salary',
+            date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            balance: 5247.83
+          },
+          {
+            id: '2',
+            accountId: 'acc1',
+            type: 'debit',
+            amount: 89.99,
+            description: 'Online Purchase - Amazon',
+            date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            balance: 5157.84
+          },
+          {
+            id: '3',
+            accountId: 'acc2',
+            type: 'credit',
+            amount: 50.00,
+            description: 'Transfer from Checking',
+            date: new Date().toISOString(),
+            balance: 1250.00
+          }
+        ];
+        setTransactions(sampleTransactions);
+        localStorage.setItem('bankTransactions', JSON.stringify(sampleTransactions));
+      }
+      
       return true;
     }
     return false;
@@ -159,13 +165,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     setUser(newUser);
+    setIsNewUser(true);
+    setTransactions([]); // Start with empty transactions for new users
     localStorage.setItem('bankUser', JSON.stringify(newUser));
+    localStorage.setItem('bankTransactions', JSON.stringify([])); // Save empty transactions
     return true;
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
+    setIsNewUser(false);
     localStorage.removeItem('bankUser');
   };
 
