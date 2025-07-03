@@ -6,11 +6,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AccountCard } from './AccountCard';
 import { TransactionList } from './TransactionList';
 import { TransferModal } from './TransferModal';
+import { PayBillsModal } from './PayBillsModal';
+import { DepositCheckModal } from './DepositCheckModal';
+import { ATMModal } from './ATMModal';
 import { LogOut, CreditCard, TrendingUp, PiggyBank, User } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, logout, transactions } = useAuth();
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showPayBillsModal, setShowPayBillsModal] = useState(false);
+  const [showDepositCheckModal, setShowDepositCheckModal] = useState(false);
+  const [showATMModal, setShowATMModal] = useState(false);
 
   if (!user) return null;
 
@@ -104,9 +110,24 @@ export const Dashboard: React.FC = () => {
             >
               Transfer Funds
             </Button>
-            <Button variant="outline">Pay Bills</Button>
-            <Button variant="outline">Deposit Check</Button>
-            <Button variant="outline">Find ATM</Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowPayBillsModal(true)}
+            >
+              Pay Bills
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowDepositCheckModal(true)}
+            >
+              Deposit Check
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowATMModal(true)}
+            >
+              Find ATM
+            </Button>
           </div>
         </div>
 
@@ -161,10 +182,26 @@ export const Dashboard: React.FC = () => {
         </Card>
       </div>
 
+      {/* All Modals */}
       <TransferModal 
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
         accounts={user.accounts}
+      />
+      
+      <PayBillsModal 
+        isOpen={showPayBillsModal}
+        onClose={() => setShowPayBillsModal(false)}
+      />
+      
+      <DepositCheckModal 
+        isOpen={showDepositCheckModal}
+        onClose={() => setShowDepositCheckModal(false)}
+      />
+      
+      <ATMModal 
+        isOpen={showATMModal}
+        onClose={() => setShowATMModal(false)}
       />
     </div>
   );
