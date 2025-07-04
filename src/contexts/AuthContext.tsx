@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -14,6 +13,7 @@ interface Account {
   id: string;
   type: 'checking' | 'savings' | 'credit';
   accountNumber: string;
+  routingNumber: string;
   balance: number;
   name: string;
 }
@@ -26,6 +26,13 @@ interface Transaction {
   description: string;
   date: string;
   balance: number;
+  receiptNumber?: string;
+  transferDetails?: {
+    fromAccount?: string;
+    toAccount?: string;
+    fromName?: string;
+    toName?: string;
+  };
 }
 
 interface AuthContextType {
@@ -42,6 +49,22 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// US Bank routing number (real routing number for US Bank)
+const US_BANK_ROUTING = '091000022';
+
+const generateAccountNumber = (accountType: string) => {
+  // Generate realistic US Bank account numbers
+  const prefix = accountType === 'checking' ? '1531' : accountType === 'savings' ? '1532' : '4441';
+  const randomDigits = Math.floor(100000000 + Math.random() * 900000000);
+  return `${prefix}${randomDigits}`;
+};
+
+const generateReceiptNumber = () => {
+  const timestamp = Date.now().toString();
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `USB${timestamp.slice(-6)}${random}`;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -85,9 +108,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           {
             id: 'admin-acc1',
             type: 'checking',
-            accountNumber: '****0001',
+            accountNumber: generateAccountNumber('checking'),
+            routingNumber: US_BANK_ROUTING,
             balance: ADMIN_BALANCE,
-            name: 'Admin Checking'
+            name: 'Primary Checking'
+          },
+          {
+            id: 'admin-acc2',
+            type: 'savings',
+            accountNumber: generateAccountNumber('savings'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 50000,
+            name: 'High Yield Savings'
           }
         ]
       };
@@ -148,9 +180,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         {
           id: 'acc_' + Date.now(),
           type: 'checking',
-          accountNumber: '****' + Math.floor(1000 + Math.random() * 9000),
-          balance: 0,
+          accountNumber: generateAccountNumber('checking'),
+          routingNumber: US_BANK_ROUTING,
+          balance: 1000, // Starting balance for new users
           name: 'Primary Checking'
+        },
+        {
+          id: 'acc_' + (Date.now() + 1),
+          type: 'savings',
+          accountNumber: generateAccountNumber('savings'),
+          routingNumber: US_BANK_ROUTING,
+          balance: 0,
+          name: 'Savings Account'
         }
       ]
     };
@@ -198,7 +239,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newTransaction: Transaction = {
       ...transaction,
       id: Date.now().toString(),
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      receiptNumber: generateReceiptNumber()
     };
     
     const updatedTransactions = [newTransaction, ...transactions];
@@ -239,13 +281,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
+    const receiptNumber = generateReceiptNumber();
+    
     // Create debit transaction for source account
     addTransaction({
       accountId: fromAccountId,
       type: 'debit',
       amount,
       description: `Transfer to ${toAccount.name}`,
-      balance: fromAccount.balance - amount
+      balance: fromAccount.balance - amount,
+      receiptNumber,
+      transferDetails: {
+        fromAccount: fromAccount.accountNumber,
+        toAccount: toAccount.accountNumber,
+        fromName: fromAccount.name,
+        toName: toAccount.name
+      }
     });
     
     // Create credit transaction for destination account
@@ -254,7 +305,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       type: 'credit',
       amount,
       description: `Transfer from ${fromAccount.name}`,
-      balance: toAccount.balance + amount
+      balance: toAccount.balance + amount,
+      receiptNumber,
+      transferDetails: {
+        fromAccount: fromAccount.accountNumber,
+        toAccount: toAccount.accountNumber,
+        fromName: fromAccount.name,
+        toName: toAccount.name
+      }
     });
     
     return true;

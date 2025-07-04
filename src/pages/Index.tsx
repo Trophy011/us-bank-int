@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/LoginForm';
 import { Dashboard } from '@/components/Dashboard';
+import { Toaster } from '@/components/ui/toaster';
 
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
@@ -73,6 +73,7 @@ const Index = () => {
   return (
     <AuthProvider>
       <AppContent />
+      <Toaster />
     </AuthProvider>
   );
 };

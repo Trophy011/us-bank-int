@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,11 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRightLeft, Building2, Globe } from 'lucide-react';
+import { TransferReceipt } from './TransferReceipt';
 
 interface Account {
   id: string;
   type: 'checking' | 'savings' | 'credit';
   accountNumber: string;
+  routingNumber: string;
   balance: number;
   name: string;
 }
@@ -41,6 +42,10 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
   const [swiftCode, setSwiftCode] = useState('');
   const [country, setCountry] = useState('');
 
+  // Receipt state
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptDetails, setReceiptDetails] = useState<any>(null);
+
   const { transferFunds, addTransaction } = useAuth();
   const { toast } = useToast();
 
@@ -64,6 +69,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
   const handleInternalTransfer = async () => {
     const transferAmount = parseFloat(amount);
     const sourceAccount = accounts.find(acc => acc.id === fromAccount);
+    const destAccount = accounts.find(acc => acc.id === toAccount);
     
     if (sourceAccount && transferAmount > sourceAccount.balance) {
       toast({
@@ -76,7 +82,20 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
 
     const success = transferFunds(fromAccount, toAccount, transferAmount, description);
     
-    if (success) {
+    if (success && sourceAccount && destAccount) {
+      // Show receipt
+      setReceiptDetails({
+        receiptNumber: `USB${Date.now().toString().slice(-6)}${Math.floor(1000 + Math.random() * 9000)}`,
+        amount: transferAmount,
+        fromAccount: sourceAccount.accountNumber,
+        toAccount: destAccount.accountNumber,
+        fromName: sourceAccount.name,
+        toName: destAccount.name,
+        date: new Date().toISOString(),
+        description
+      });
+      setShowReceipt(true);
+      
       toast({
         title: "Transfer Successful",
         description: `$${transferAmount.toFixed(2)} has been transferred successfully.`,
@@ -199,7 +218,11 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
       
       if (success) {
         resetForm();
-        onClose();
+        if (transferType === 'internal') {
+          // Don't close modal yet, receipt will be shown
+        } else {
+          onClose();
+        }
       }
     } catch (error) {
       toast({
@@ -221,72 +244,52 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
     return `${account.name} (${account.accountNumber})`;
   };
 
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setReceiptDetails(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5" />
-            Transfer Funds
-          </DialogTitle>
-          <DialogDescription>
-            Transfer money between your accounts or to any bank worldwide
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Tabs value={transferType} onValueChange={(value) => setTransferType(value as any)} className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="internal" className="flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4" />
-              Between Accounts
-            </TabsTrigger>
-            <TabsTrigger value="domestic" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Domestic
-            </TabsTrigger>
-            <TabsTrigger value="international" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              International
-            </TabsTrigger>
-          </TabsList>
+    <>
+      <Dialog open={isOpen && !showReceipt} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" />
+              Transfer Funds
+            </DialogTitle>
+            <DialogDescription>
+              Transfer money between your accounts or to any bank worldwide
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs value={transferType} onValueChange={(value) => setTransferType(value as any)} className="mt-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="internal" className="flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4" />
+                Between Accounts
+              </TabsTrigger>
+              <TabsTrigger value="domestic" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Domestic
+              </TabsTrigger>
+              <TabsTrigger value="international" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                International
+              </TabsTrigger>
+            </TabsList>
 
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            {/* From Account - Common for all transfer types */}
-            <div className="space-y-2">
-              <Label htmlFor="fromAccount">From Account</Label>
-              <Select value={fromAccount} onValueChange={setFromAccount}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {eligibleFromAccounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex justify-between items-center w-full">
-                        <span>{getAccountDisplayName(account)}</span>
-                        <span className="ml-2 text-sm text-gray-500">
-                          ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fromAccount && (
-                <p className="text-sm text-gray-600">
-                  Available: ${getSelectedAccountBalance(fromAccount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              )}
-            </div>
-
-            <TabsContent value="internal" className="space-y-4 mt-0">
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {/* From Account - Common for all transfer types */}
               <div className="space-y-2">
-                <Label htmlFor="toAccount">To Account</Label>
-                <Select value={toAccount} onValueChange={setToAccount}>
+                <Label htmlFor="fromAccount">From Account</Label>
+                <Select value={fromAccount} onValueChange={setFromAccount}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select destination account" />
+                    <SelectValue placeholder="Select source account" />
                   </SelectTrigger>
                   <SelectContent>
-                    {eligibleToAccounts.map((account) => (
+                    {eligibleFromAccounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         <div className="flex justify-between items-center w-full">
                           <span>{getAccountDisplayName(account)}</span>
@@ -298,8 +301,35 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                     ))}
                   </SelectContent>
                 </Select>
+                {fromAccount && (
+                  <p className="text-sm text-gray-600">
+                    Available: ${getSelectedAccountBalance(fromAccount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
-            </TabsContent>
+
+              <TabsContent value="internal" className="space-y-4 mt-0">
+                <div className="space-y-2">
+                  <Label htmlFor="toAccount">To Account</Label>
+                  <Select value={toAccount} onValueChange={setToAccount}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select destination account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eligibleToAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex justify-between items-center w-full">
+                            <span>{getAccountDisplayName(account)}</span>
+                            <span className="ml-2 text-sm text-gray-500">
+                              ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TabsContent>
 
             <TabsContent value="domestic" className="space-y-4 mt-0">
               <div className="grid grid-cols-2 gap-4">
@@ -427,66 +457,76 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
               </div>
             </TabsContent>
 
-            {/* Amount and Description - Common for all transfer types */}
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                min="0.01"
-                step="0.01"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                type="text"
-                placeholder="What's this transfer for?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-              />
-            </div>
-
-            {transferType !== 'internal' && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Transfer Fee:</strong> {transferType === 'international' ? '$25.00' : '$15.00'} 
-                  {transferType === 'international' && ' + exchange rate markup'}
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  Processing time: {transferType === 'international' ? '3-5 business days' : '1-3 business days'}
-                </p>
+              {/* Amount and Description - Common for all transfer types */}
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount ($)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  min="0.01"
+                  step="0.01"
+                  required
+                />
               </div>
-            )}
 
-            <div className="flex gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                className="flex-1"
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 bank-gradient hover:opacity-90 transition-opacity"
-                disabled={loading}
-              >
-                {loading ? 'Processing...' : transferType === 'internal' ? 'Transfer' : 'Send Transfer'}
-              </Button>
-            </div>
-          </form>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  type="text"
+                  placeholder="What's this transfer for?"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                />
+              </div>
+
+              {transferType !== 'internal' && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Transfer Fee:</strong> {transferType === 'international' ? '$25.00' : '$15.00'} 
+                    {transferType === 'international' && ' + exchange rate markup'}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Processing time: {transferType === 'international' ? '3-5 business days' : '1-3 business days'}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 bank-gradient hover:opacity-90 transition-opacity"
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : transferType === 'internal' ? 'Transfer' : 'Send Transfer'}
+                </Button>
+              </div>
+            </form>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer Receipt Modal */}
+      {showReceipt && receiptDetails && (
+        <TransferReceipt
+          isOpen={showReceipt}
+          onClose={handleCloseReceipt}
+          transferDetails={receiptDetails}
+        />
+      )}
+    </>
   );
 };
