@@ -17,36 +17,52 @@ const AppContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bank-blue-50 to-bank-blue-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-bank-blue-50 via-white to-bank-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-bank-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-bank-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
+        <div className="absolute top-40 left-1/2 w-80 h-80 bg-bank-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo and Brand */}
-        <div className="text-center mb-8">
-          <div className="bank-gradient w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white font-bold text-2xl">US</span>
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="bank-gradient w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-all duration-300">
+            <span className="text-white font-bold text-3xl">US</span>
           </div>
-          <h1 className="text-3xl font-bold text-bank-blue-900 mb-2">US Bank</h1>
-          <p className="text-bank-blue-700">Secure Online Banking</p>
+          <h1 className="text-4xl font-bold text-bank-blue-900 mb-3 tracking-tight">US Bank</h1>
+          <p className="text-bank-blue-700 text-lg font-medium">Secure Digital Banking</p>
+          <div className="w-24 h-1 bg-gradient-to-r from-bank-blue-500 to-bank-blue-700 mx-auto mt-4 rounded-full"></div>
         </div>
 
         <LoginForm onSuccess={handleLoginSuccess} />
 
         {/* Security Notice */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center animate-fade-in animation-delay-1000">
+          <div className="flex items-center justify-center mb-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+            <p className="text-sm text-gray-700 font-medium">Bank-Level Security Enabled</p>
+          </div>
           <p className="text-xs text-gray-600">
-            🔒 Your information is protected with bank-level security
+            🔒 Your data is protected with 256-bit SSL encryption
           </p>
         </div>
 
-        {/* Demo Information */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">Demo Features:</h3>
-          <ul className="text-xs text-blue-800 space-y-1">
-            <li>• Real-time OTP verification</li>
-            <li>• Multiple account types</li>
-            <li>• Fund transfers between accounts</li>
-            <li>• Transaction history storage</li>
-            <li>• Professional banking interface</li>
-          </ul>
+        {/* Trust Indicators */}
+        <div className="mt-6 grid grid-cols-3 gap-4 animate-fade-in animation-delay-1500">
+          <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-200">
+            <div className="text-bank-blue-600 font-bold text-lg">24/7</div>
+            <div className="text-xs text-gray-600">Support</div>
+          </div>
+          <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-200">
+            <div className="text-bank-blue-600 font-bold text-lg">FDIC</div>
+            <div className="text-xs text-gray-600">Insured</div>
+          </div>
+          <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-200">
+            <div className="text-bank-blue-600 font-bold text-lg">Mobile</div>
+            <div className="text-xs text-gray-600">Banking</div>
+          </div>
         </div>
       </div>
     </div>

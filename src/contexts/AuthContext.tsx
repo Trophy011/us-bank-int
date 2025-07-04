@@ -7,6 +7,7 @@ interface User {
   name: string;
   phone: string;
   accounts: Account[];
+  isAdmin?: boolean;
 }
 
 interface Account {
@@ -47,20 +48,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [currentOTP, setCurrentOTP] = useState<string>('');
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
+
+  // Admin account configuration
+  const ADMIN_EMAIL = 'godswilluzoma517@gmail.com';
+  const ADMIN_PASSWORD = 'smart446688';
+  const ADMIN_BALANCE = 100000;
 
   useEffect(() => {
     // Load data from localStorage on startup
     const storedUser = localStorage.getItem('bankUser');
     const storedTransactions = localStorage.getItem('bankTransactions');
+    const storedRegisteredUsers = localStorage.getItem('registeredUsers');
     
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
       setIsAuthenticated(true);
     }
     
     if (storedTransactions) {
       setTransactions(JSON.parse(storedTransactions));
+    }
+
+    if (storedRegisteredUsers) {
+      setRegisteredUsers(JSON.parse(storedRegisteredUsers));
+    } else {
+      // Initialize with admin account
+      const adminUser: User = {
+        id: 'admin',
+        email: ADMIN_EMAIL,
+        name: 'Administrator',
+        phone: '+1 (555) 000-0000',
+        isAdmin: true,
+        accounts: [
+          {
+            id: 'admin-acc1',
+            type: 'checking',
+            accountNumber: '****0001',
+            balance: ADMIN_BALANCE,
+            name: 'Admin Checking'
+          }
+        ]
+      };
+      const initialUsers = [adminUser];
+      setRegisteredUsers(initialUsers);
+      localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
     }
   }, []);
 
@@ -68,121 +101,88 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (email && password) {
-      const newUser: User = {
-        id: 'user1',
-        email,
-        name: 'John Doe',
-        phone: '+1 (555) 123-4567',
-        accounts: [
-          {
-            id: 'acc1',
-            type: 'checking',
-            accountNumber: '****1234',
-            balance: 5247.83,
-            name: 'Primary Checking'
-          },
-          {
-            id: 'acc2',
-            type: 'savings',
-            accountNumber: '****5678',
-            balance: 12250.00,
-            name: 'High Yield Savings'
-          },
-          {
-            id: 'acc3',
-            type: 'credit',
-            accountNumber: '****9012',
-            balance: -1234.56,
-            name: 'Platinum Credit Card'
-          }
-        ]
-      };
-      
-      setUser(newUser);
-      setIsNewUser(false);
-      localStorage.setItem('bankUser', JSON.stringify(newUser));
-      
-      // Load sample transactions only for existing users (login)
-      const storedTransactions = localStorage.getItem('bankTransactions');
-      if (!storedTransactions) {
-        const sampleTransactions: Transaction[] = [
-          {
-            id: '1',
-            accountId: 'acc1',
-            type: 'credit',
-            amount: 2500.00,
-            description: 'Direct Deposit - Salary',
-            date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            balance: 5247.83
-          },
-          {
-            id: '2',
-            accountId: 'acc1',
-            type: 'debit',
-            amount: 89.99,
-            description: 'Online Purchase - Amazon',
-            date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            balance: 5157.84
-          },
-          {
-            id: '3',
-            accountId: 'acc2',
-            type: 'credit',
-            amount: 50.00,
-            description: 'Transfer from Checking',
-            date: new Date().toISOString(),
-            balance: 1250.00
-          }
-        ];
-        setTransactions(sampleTransactions);
-        localStorage.setItem('bankTransactions', JSON.stringify(sampleTransactions));
+    // Check if it's admin login
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      const adminUser = registeredUsers.find(u => u.email === ADMIN_EMAIL);
+      if (adminUser) {
+        setUser(adminUser);
+        localStorage.setItem('bankUser', JSON.stringify(adminUser));
+        return true;
       }
-      
-      return true;
     }
-    return false;
+    
+    // Check registered users
+    const existingUser = registeredUsers.find(u => u.email === email);
+    if (!existingUser) {
+      return false; // User must register first
+    }
+    
+    // In a real app, you'd verify the password hash
+    // For demo purposes, we'll accept any password for existing users
+    setUser(existingUser);
+    localStorage.setItem('bankUser', JSON.stringify(existingUser));
+    
+    // Load user's transactions
+    const userTransactions = JSON.parse(localStorage.getItem(`transactions_${existingUser.id}`) || '[]');
+    setTransactions(userTransactions);
+    
+    return true;
   };
 
   const register = async (email: string, password: string, name: string, phone: string): Promise<boolean> => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Check if user already exists
+    const existingUser = registeredUsers.find(u => u.email === email);
+    if (existingUser) {
+      return false; // User already exists
+    }
+    
     const newUser: User = {
-      id: 'user' + Date.now(),
+      id: 'user_' + Date.now(),
       email,
       name,
       phone,
       accounts: [
         {
-          id: 'acc1',
+          id: 'acc_' + Date.now(),
           type: 'checking',
-          accountNumber: '****' + Math.floor(Math.random() * 9999),
+          accountNumber: '****' + Math.floor(1000 + Math.random() * 9000),
           balance: 0,
           name: 'Primary Checking'
         }
       ]
     };
     
+    const updatedUsers = [...registeredUsers, newUser];
+    setRegisteredUsers(updatedUsers);
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+    
     setUser(newUser);
-    setIsNewUser(true);
-    setTransactions([]); // Start with empty transactions for new users
     localStorage.setItem('bankUser', JSON.stringify(newUser));
-    localStorage.setItem('bankTransactions', JSON.stringify([])); // Save empty transactions
+    
+    // Initialize empty transactions for new user
+    setTransactions([]);
+    localStorage.setItem(`transactions_${newUser.id}`, JSON.stringify([]));
+    
     return true;
   };
 
   const logout = () => {
+    if (user) {
+      // Save current user's transactions before logout
+      localStorage.setItem(`transactions_${user.id}`, JSON.stringify(transactions));
+    }
     setUser(null);
     setIsAuthenticated(false);
-    setIsNewUser(false);
     localStorage.removeItem('bankUser');
   };
 
   const sendOTP = (): string => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     setCurrentOTP(otp);
-    console.log('OTP sent:', otp); // In real app, this would be sent via SMS/email
+    console.log('OTP sent to email:', otp);
     return otp;
   };
 
@@ -203,10 +203,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const updatedTransactions = [newTransaction, ...transactions];
     setTransactions(updatedTransactions);
-    localStorage.setItem('bankTransactions', JSON.stringify(updatedTransactions));
     
-    // Update account balance
     if (user) {
+      localStorage.setItem(`transactions_${user.id}`, JSON.stringify(updatedTransactions));
+      
+      // Update account balance
       const updatedUser = { ...user };
       const account = updatedUser.accounts.find(acc => acc.id === transaction.accountId);
       if (account) {
@@ -217,6 +218,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setUser(updatedUser);
         localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+        
+        // Update in registered users list
+        const updatedRegisteredUsers = registeredUsers.map(u => 
+          u.id === updatedUser.id ? updatedUser : u
+        );
+        setRegisteredUsers(updatedRegisteredUsers);
+        localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
       }
     }
   };
