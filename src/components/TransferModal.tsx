@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRightLeft, Building2, Globe, CheckCircle, Mail } from 'lucide-react';
+import { ArrowRightLeft, Building2, Globe, CheckCircle, Mail, Building } from 'lucide-react';
 import { TransferReceipt } from './TransferReceipt';
 
 interface Account {
@@ -26,12 +26,15 @@ interface TransferModalProps {
 }
 
 export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, accounts }) => {
-  const [transferType, setTransferType] = useState<'internal' | 'domestic' | 'international'>('internal');
+  const [transferType, setTransferType] = useState<'internal' | 'us-bank' | 'domestic' | 'international'>('internal');
   const [fromAccount, setFromAccount] = useState('');
   const [toAccount, setToAccount] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // US Bank transfer fields
+  const [usBankAccountNumber, setUsBankAccountNumber] = useState('');
 
   // External transfer fields
   const [recipientName, setRecipientName] = useState('');
@@ -46,7 +49,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptDetails, setReceiptDetails] = useState<any>(null);
 
-  const { transferFunds, sendDomesticTransfer, user } = useAuth();
+  const { transferFunds, sendDomesticTransfer, transferToUSBankAccount, user } = useAuth();
   const { toast } = useToast();
 
   const eligibleFromAccounts = accounts.filter(acc => acc.type !== 'credit');
@@ -57,6 +60,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
     setToAccount('');
     setAmount('');
     setDescription('');
+    setUsBankAccountNumber('');
     setRecipientName('');
     setRecipientEmail('');
     setBankName('');
@@ -64,6 +68,50 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
     setAccountNumber('');
     setSwiftCode('');
     setCountry('');
+  };
+
+  const handleUSBankTransfer = async () => {
+    const transferAmount = parseFloat(amount);
+    const sourceAccount = accounts.find(acc => acc.id === fromAccount);
+    
+    if (sourceAccount && transferAmount > sourceAccount.balance) {
+      toast({
+        title: "Insufficient Funds",
+        description: "You don't have enough balance in the source account.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const success = transferToUSBankAccount(fromAccount, usBankAccountNumber, transferAmount, description);
+    
+    if (success && sourceAccount) {
+      toast({
+        title: "✅ US Bank Transfer Successful",
+        description: (
+          <div className="space-y-1">
+            <p className="font-medium">${transferAmount.toFixed(2)} transferred successfully</p>
+            <p className="text-sm">To account: {usBankAccountNumber}</p>
+            <div className="flex items-center text-sm text-green-600">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Funds available immediately
+            </div>
+            <div className="flex items-center text-sm text-green-600">
+              <Mail className="h-3 w-3 mr-1" />
+              Email confirmations sent to both parties
+            </div>
+          </div>
+        ),
+      });
+      return true;
+    } else {
+      toast({
+        title: "Transfer Failed",
+        description: "Unable to find the recipient account or insufficient funds.",
+        variant: "destructive"
+      });
+      return false;
+    }
   };
 
   const handleInternalTransfer = async () => {
@@ -235,6 +283,15 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
       return;
     }
 
+    if (transferType === 'us-bank' && !usBankAccountNumber) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter the US Bank account number.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (transferType !== 'internal') {
       if (!recipientName || !bankName || !accountNumber) {
         toast({
@@ -282,6 +339,8 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
       let success = false;
       if (transferType === 'internal') {
         success = await handleInternalTransfer();
+      } else if (transferType === 'us-bank') {
+        success = await handleUSBankTransfer();
       } else if (transferType === 'domestic') {
         success = await handleDomesticTransfer();
       } else {
@@ -337,17 +396,21 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
           </DialogHeader>
           
           <Tabs value={transferType} onValueChange={(value) => setTransferType(value as any)} className="mt-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="internal" className="flex items-center gap-2">
-                <ArrowRightLeft className="h-4 w-4" />
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="internal" className="flex items-center gap-1 text-xs">
+                <ArrowRightLeft className="h-3 w-3" />
                 Between Accounts
               </TabsTrigger>
-              <TabsTrigger value="domestic" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
+              <TabsTrigger value="us-bank" className="flex items-center gap-1 text-xs">
+                <Building className="h-3 w-3" />
+                US Bank
+              </TabsTrigger>
+              <TabsTrigger value="domestic" className="flex items-center gap-1 text-xs">
+                <Building2 className="h-3 w-3" />
                 Domestic
               </TabsTrigger>
-              <TabsTrigger value="international" className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
+              <TabsTrigger value="international" className="flex items-center gap-1 text-xs">
+                <Globe className="h-3 w-3" />
                 International
               </TabsTrigger>
             </TabsList>
@@ -403,134 +466,151 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                 </div>
               </TabsContent>
 
-            <TabsContent value="domestic" className="space-y-4 mt-0">
-              <div className="grid grid-cols-2 gap-4">
+              <TabsContent value="us-bank" className="space-y-4 mt-0">
                 <div className="space-y-2">
-                  <Label htmlFor="recipientName">Recipient Name *</Label>
+                  <Label htmlFor="usBankAccountNumber">US Bank Account Number *</Label>
                   <Input
-                    id="recipientName"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="John Doe"
+                    id="usBankAccountNumber"
+                    value={usBankAccountNumber}
+                    onChange={(e) => setUsBankAccountNumber(e.target.value)}
+                    placeholder="1531234567"
+                    maxLength={10}
                     required
                   />
+                  <p className="text-xs text-gray-500">
+                    Enter the 10-digit US Bank account number. Transfers are instant and free between US Bank accounts.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="recipientEmail">Recipient Email</Label>
-                  <Input
-                    id="recipientEmail"
-                    type="email"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    placeholder="john@example.com"
-                  />
-                  <p className="text-xs text-gray-500">For transfer notifications</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name *</Label>
-                  <Input
-                    id="bankName"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="Bank of America"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="routingNumber">Routing Number *</Label>
-                  <Input
-                    id="routingNumber"
-                    value={routingNumber}
-                    onChange={(e) => setRoutingNumber(e.target.value)}
-                    placeholder="021000021"
-                    maxLength={9}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="accountNumber">Account Number *</Label>
-                <Input
-                  id="accountNumber"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder="1234567890"
-                  maxLength={17}
-                  required
-                />
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="international" className="space-y-4 mt-0">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="recipientName">Recipient Name</Label>
-                  <Input
-                    id="recipientName"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="John Doe"
-                    required
-                  />
+              <TabsContent value="domestic" className="space-y-4 mt-0">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientName">Recipient Name *</Label>
+                    <Input
+                      id="recipientName"
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientEmail">Recipient Email</Label>
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      placeholder="john@example.com"
+                    />
+                    <p className="text-xs text-gray-500">For transfer notifications</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Bank Name *</Label>
+                    <Input
+                      id="bankName"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      placeholder="Bank of America"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="routingNumber">Routing Number *</Label>
+                    <Input
+                      id="routingNumber"
+                      value={routingNumber}
+                      onChange={(e) => setRoutingNumber(e.target.value)}
+                      placeholder="021000021"
+                      maxLength={9}
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="recipientEmail">Recipient Email (Optional)</Label>
-                  <Input
-                    id="recipientEmail"
-                    type="email"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    placeholder="john@example.com"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="HSBC Bank"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    placeholder="United Kingdom"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="swiftCode">SWIFT Code</Label>
-                  <Input
-                    id="swiftCode"
-                    value={swiftCode}
-                    onChange={(e) => setSwiftCode(e.target.value)}
-                    placeholder="HBUKGB4B"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Account Number/IBAN</Label>
+                  <Label htmlFor="accountNumber">Account Number *</Label>
                   <Input
                     id="accountNumber"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="GB29 NWBK 6016 1331 9268 19"
+                    placeholder="1234567890"
+                    maxLength={17}
                     required
                   />
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
+
+              <TabsContent value="international" className="space-y-4 mt-0">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientName">Recipient Name</Label>
+                    <Input
+                      id="recipientName"
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientEmail">Recipient Email (Optional)</Label>
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      placeholder="john@example.com"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input
+                      id="bankName"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      placeholder="HSBC Bank"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="United Kingdom"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="swiftCode">SWIFT Code</Label>
+                    <Input
+                      id="swiftCode"
+                      value={swiftCode}
+                      onChange={(e) => setSwiftCode(e.target.value)}
+                      placeholder="HBUKGB4B"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountNumber">Account Number/IBAN</Label>
+                    <Input
+                      id="accountNumber"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      placeholder="GB29 NWBK 6016 1331 9268 19"
+                      required
+                    />
+                  </div>
+                </div>
+              </TabsContent>
 
               {/* Amount and Description - Common for all transfer types */}
               <div className="space-y-2">
@@ -559,7 +639,22 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                 />
               </div>
 
-              {transferType !== 'internal' && (
+              {transferType === 'us-bank' && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800 font-medium">
+                    <strong>US Bank Transfer:</strong> Free and instant
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Funds will be available immediately in the recipient's account
+                  </p>
+                  <div className="flex items-center mt-2 text-xs text-green-700">
+                    <Mail className="h-3 w-3 mr-1" />
+                    Email confirmations will be sent to both parties
+                  </div>
+                </div>
+              )}
+
+              {transferType !== 'internal' && transferType !== 'us-bank' && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800 font-medium">
                     <strong>Transfer Fee:</strong> {transferType === 'international' ? '$25.00' : '$15.00'} 
@@ -590,7 +685,10 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                   className="flex-1 bank-gradient hover:opacity-90 transition-opacity"
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : transferType === 'internal' ? 'Transfer Now' : 'Send Transfer'}
+                  {loading ? 'Processing...' : 
+                   transferType === 'internal' ? 'Transfer Now' : 
+                   transferType === 'us-bank' ? 'Send to US Bank' :
+                   'Send Transfer'}
                 </Button>
               </div>
             </form>

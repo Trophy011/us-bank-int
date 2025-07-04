@@ -68,14 +68,6 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
     return 'Available Balance';
   };
 
-  const formatAccountNumber = (accountNumber: string) => {
-    // Format as XXXX-XXXX-XX for better readability
-    if (accountNumber.length === 10) {
-      return `${accountNumber.slice(0, 4)}-${accountNumber.slice(4, 8)}-${accountNumber.slice(8)}`;
-    }
-    return accountNumber;
-  };
-
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -104,28 +96,30 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
             
             <div className="pt-2 border-t border-white/20 space-y-3">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <p className="text-white/80 text-xs">Account Number</p>
-                  <p className="text-white font-mono text-lg font-bold tracking-wider">
-                    {formatAccountNumber(account.accountNumber)}
+                  <p className="text-white font-mono text-base font-bold tracking-wider break-all">
+                    {account.accountNumber}
                   </p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(account.accountNumber, 'Account number')}
-                  className="p-2 hover:bg-white/20 rounded transition-colors"
+                  className="p-2 hover:bg-white/20 rounded transition-colors ml-2 flex-shrink-0"
                 >
                   <Copy className="h-4 w-4" />
                 </button>
               </div>
               
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <p className="text-white/80 text-xs">Routing Number</p>
-                  <p className="text-white font-mono text-base font-semibold tracking-wider">{account.routingNumber}</p>
+                  <p className="text-white font-mono text-base font-bold tracking-wider">
+                    {account.routingNumber}
+                  </p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(account.routingNumber, 'Routing number')}
-                  className="p-2 hover:bg-white/20 rounded transition-colors"
+                  className="p-2 hover:bg-white/20 rounded transition-colors ml-2 flex-shrink-0"
                 >
                   <Copy className="h-4 w-4" />
                 </button>

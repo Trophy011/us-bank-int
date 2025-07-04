@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -48,18 +47,20 @@ interface AuthContextType {
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
   transferFunds: (fromAccountId: string, toAccountId: string, amount: number, description: string) => boolean;
   sendDomesticTransfer: (fromAccountId: string, recipientDetails: any, amount: number, description: string) => boolean;
+  transferToUSBankAccount: (fromAccountId: string, toAccountNumber: string, amount: number, description: string) => boolean;
+  getAllUsers: () => User[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// US Bank routing number (real routing number for US Bank)
+// US Bank routing number
 const US_BANK_ROUTING = '091000022';
 
 const generateAccountNumber = (accountType: string) => {
   // Generate complete 10-digit US Bank account numbers
   const prefix = accountType === 'checking' ? '1531' : accountType === 'savings' ? '1532' : '4441';
-  const randomDigits = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
-  return `${prefix}${randomDigits}`.substring(0, 10); // Ensure exactly 10 digits
+  const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digits
+  return `${prefix}${randomDigits}`; // Total 10 digits
 };
 
 const generateReceiptNumber = () => {
@@ -68,7 +69,7 @@ const generateReceiptNumber = () => {
   return `USB${timestamp.slice(-6)}${random}`;
 };
 
-const simulateEmailAlert = (email: string, type: 'transfer' | 'receipt', details: any) => {
+const simulateEmailAlert = (email: string, type: 'transfer' | 'receipt' | 'incoming', details: any) => {
   console.log(`📧 Email Alert Sent to: ${email}`);
   console.log(`Alert Type: ${type}`);
   console.log('Details:', details);
@@ -411,6 +412,148 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  const getAllUsers = () => {
+    return registeredUsers;
+  };
+
+  const findAccountByNumber = (accountNumber: string): { user: User; account: Account } | null => {
+    for (const usr of registeredUsers) {
+      const account = usr.accounts.find(acc => acc.accountNumber === accountNumber);
+      if (account) {
+        return { user: usr, account };
+      }
+    }
+    return null;
+  };
+
+  const updateUserBalance = (userId: string, accountId: string, newBalance: number) => {
+    const updatedUsers = registeredUsers.map(usr => {
+      if (usr.id === userId) {
+        const updatedUser = {
+          ...usr,
+          accounts: usr.accounts.map(acc => 
+            acc.id === accountId ? { ...acc, balance: newBalance } : acc
+          )
+        };
+        
+        // Update current user if it's the same
+        if (user?.id === userId) {
+          setUser(updatedUser);
+          localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+        }
+        
+        return updatedUser;
+      }
+      return usr;
+    });
+    
+    setRegisteredUsers(updatedUsers);
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+  };
+
+  const addTransactionForUser = (userId: string, transaction: Omit<Transaction, 'id' | 'date'>) => {
+    const newTransaction: Transaction = {
+      ...transaction,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      date: new Date().toISOString(),
+      receiptNumber: generateReceiptNumber()
+    };
+    
+    // Load user's existing transactions
+    const userTransactions = JSON.parse(localStorage.getItem(`transactions_${userId}`) || '[]');
+    const updatedTransactions = [newTransaction, ...userTransactions];
+    
+    // Save updated transactions for the user
+    localStorage.setItem(`transactions_${userId}`, JSON.stringify(updatedTransactions));
+    
+    // Update current user's transactions if it's the same user
+    if (user?.id === userId) {
+      setTransactions(updatedTransactions);
+    }
+    
+    return newTransaction;
+  };
+
+  const transferToUSBankAccount = (fromAccountId: string, toAccountNumber: string, amount: number, description: string): boolean => {
+    if (!user) return false;
+    
+    const fromAccount = user.accounts.find(acc => acc.id === fromAccountId);
+    if (!fromAccount || fromAccount.balance < amount) {
+      return false;
+    }
+
+    // Find the recipient account
+    const recipientInfo = findAccountByNumber(toAccountNumber);
+    if (!recipientInfo) {
+      return false; // Account not found
+    }
+
+    const receiptNumber = generateReceiptNumber();
+    
+    // Create debit transaction for sender
+    addTransactionForUser(user.id, {
+      accountId: fromAccountId,
+      type: 'debit',
+      amount,
+      description: `Transfer to ${recipientInfo.user.name} (${toAccountNumber})`,
+      balance: fromAccount.balance - amount,
+      receiptNumber,
+      transferDetails: {
+        fromAccount: fromAccount.accountNumber,
+        toAccount: toAccountNumber,
+        fromName: fromAccount.name,
+        toName: recipientInfo.account.name
+      }
+    });
+
+    // Create credit transaction for recipient
+    addTransactionForUser(recipientInfo.user.id, {
+      accountId: recipientInfo.account.id,
+      type: 'credit',
+      amount,
+      description: `Transfer from ${user.name} (${fromAccount.accountNumber})`,
+      balance: recipientInfo.account.balance + amount,
+      receiptNumber,
+      transferDetails: {
+        fromAccount: fromAccount.accountNumber,
+        toAccount: toAccountNumber,
+        fromName: fromAccount.name,
+        toName: recipientInfo.account.name
+      }
+    });
+
+    // Update balances
+    updateUserBalance(user.id, fromAccountId, fromAccount.balance - amount);
+    updateUserBalance(recipientInfo.user.id, recipientInfo.account.id, recipientInfo.account.balance + amount);
+
+    // Send email alerts
+    if (user.email) {
+      simulateEmailAlert(user.email, 'transfer', {
+        type: 'US Bank Transfer Sent',
+        amount: amount,
+        recipient: recipientInfo.user.name,
+        recipientAccount: toAccountNumber,
+        receiptNumber: receiptNumber,
+        timestamp: new Date().toISOString(),
+        status: 'Completed - Funds transferred immediately'
+      });
+    }
+
+    if (recipientInfo.user.email) {
+      simulateEmailAlert(recipientInfo.user.email, 'incoming', {
+        type: 'US Bank Transfer Received',
+        amount: amount,
+        sender: user.name,
+        senderAccount: fromAccount.accountNumber,
+        receiptNumber: receiptNumber,
+        timestamp: new Date().toISOString(),
+        status: 'Completed - Funds available immediately'
+      });
+    }
+    
+    return true;
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -423,7 +566,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       transactions,
       addTransaction,
       transferFunds,
-      sendDomesticTransfer
+      sendDomesticTransfer,
+      transferToUSBankAccount,
+      getAllUsers
     }}>
       {children}
     </AuthContext.Provider>
