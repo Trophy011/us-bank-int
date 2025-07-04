@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRightLeft, Building2, Globe } from 'lucide-react';
+import { ArrowRightLeft, Building2, Globe, CheckCircle, Mail } from 'lucide-react';
 import { TransferReceipt } from './TransferReceipt';
 
 interface Account {
@@ -46,7 +46,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptDetails, setReceiptDetails] = useState<any>(null);
 
-  const { transferFunds, addTransaction } = useAuth();
+  const { transferFunds, sendDomesticTransfer, user } = useAuth();
   const { toast } = useToast();
 
   const eligibleFromAccounts = accounts.filter(acc => acc.type !== 'credit');
@@ -97,14 +97,74 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
       setShowReceipt(true);
       
       toast({
-        title: "Transfer Successful",
-        description: `$${transferAmount.toFixed(2)} has been transferred successfully.`,
+        title: "✅ Transfer Successful",
+        description: (
+          <div className="space-y-1">
+            <p className="font-medium">${transferAmount.toFixed(2)} transferred successfully</p>
+            <div className="flex items-center text-sm text-green-600">
+              <Mail className="h-3 w-3 mr-1" />
+              Email confirmation sent
+            </div>
+          </div>
+        ),
       });
       return true;
     } else {
       toast({
         title: "Transfer Failed",
         description: "Unable to process the transfer. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  const handleDomesticTransfer = async () => {
+    const transferAmount = parseFloat(amount);
+    const sourceAccount = accounts.find(acc => acc.id === fromAccount);
+    
+    if (sourceAccount && transferAmount > sourceAccount.balance) {
+      toast({
+        title: "Insufficient Funds",
+        description: "You don't have enough balance in the source account.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const recipientDetails = {
+      recipientName,
+      recipientEmail,
+      bankName,
+      routingNumber,
+      accountNumber
+    };
+
+    const success = sendDomesticTransfer(fromAccount, recipientDetails, transferAmount, description);
+    
+    if (success) {
+      toast({
+        title: "🚀 Domestic Transfer Initiated",
+        description: (
+          <div className="space-y-2">
+            <p className="font-medium">${transferAmount.toFixed(2)} to {recipientName}</p>
+            <p className="text-sm">Bank: {bankName}</p>
+            <div className="flex items-center text-sm text-blue-600">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Processing time: 1-3 business days
+            </div>
+            <div className="flex items-center text-sm text-green-600">
+              <Mail className="h-3 w-3 mr-1" />
+              Email confirmations sent to both parties
+            </div>
+          </div>
+        ),
+      });
+      return true;
+    } else {
+      toast({
+        title: "Transfer Failed", 
+        description: "Unable to process the domestic transfer. Please check your details.",
         variant: "destructive"
       });
       return false;
@@ -124,7 +184,8 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
       return false;
     }
 
-    // Simulate external transfer by creating a debit transaction
+    // For international transfers, use the existing addTransaction method
+    const { addTransaction } = useAuth();
     addTransaction({
       accountId: fromAccount,
       type: 'debit',
@@ -137,8 +198,17 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
 
     const transferTypeLabel = transferType === 'international' ? 'International' : 'Domestic';
     toast({
-      title: `${transferTypeLabel} Transfer Initiated`,
-      description: `$${transferAmount.toFixed(2)} transfer to ${recipientName} is being processed. This may take 1-5 business days.`,
+      title: `🌍 ${transferTypeLabel} Transfer Initiated`,
+      description: (
+        <div className="space-y-1">
+          <p className="font-medium">${transferAmount.toFixed(2)} to {recipientName}</p>
+          <p className="text-sm">Processing time: {transferType === 'international' ? '3-5 business days' : '1-3 business days'}</p>
+          <div className="flex items-center text-sm text-green-600">
+            <Mail className="h-3 w-3 mr-1" />
+            Email confirmation sent
+          </div>
+        </div>
+      ),
     });
     
     return true;
@@ -212,6 +282,8 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
       let success = false;
       if (transferType === 'internal') {
         success = await handleInternalTransfer();
+      } else if (transferType === 'domestic') {
+        success = await handleDomesticTransfer();
       } else {
         success = await handleExternalTransfer();
       }
@@ -241,7 +313,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
   };
 
   const getAccountDisplayName = (account: Account) => {
-    return `${account.name} (${account.accountNumber})`;
+    return `${account.name} (****${account.accountNumber.slice(-4)})`;
   };
 
   const handleCloseReceipt = () => {
@@ -334,7 +406,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
             <TabsContent value="domestic" className="space-y-4 mt-0">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="recipientName">Recipient Name</Label>
+                  <Label htmlFor="recipientName">Recipient Name *</Label>
                   <Input
                     id="recipientName"
                     value={recipientName}
@@ -344,7 +416,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="recipientEmail">Recipient Email (Optional)</Label>
+                  <Label htmlFor="recipientEmail">Recipient Email</Label>
                   <Input
                     id="recipientEmail"
                     type="email"
@@ -352,11 +424,12 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                     onChange={(e) => setRecipientEmail(e.target.value)}
                     placeholder="john@example.com"
                   />
+                  <p className="text-xs text-gray-500">For transfer notifications</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
+                  <Label htmlFor="bankName">Bank Name *</Label>
                   <Input
                     id="bankName"
                     value={bankName}
@@ -366,23 +439,25 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="routingNumber">Routing Number</Label>
+                  <Label htmlFor="routingNumber">Routing Number *</Label>
                   <Input
                     id="routingNumber"
                     value={routingNumber}
                     onChange={(e) => setRoutingNumber(e.target.value)}
                     placeholder="021000021"
+                    maxLength={9}
                     required
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="accountNumber">Account Number</Label>
+                <Label htmlFor="accountNumber">Account Number *</Label>
                 <Input
                   id="accountNumber"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
                   placeholder="1234567890"
+                  maxLength={17}
                   required
                 />
               </div>
@@ -459,7 +534,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
 
               {/* Amount and Description - Common for all transfer types */}
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount ($)</Label>
+                <Label htmlFor="amount">Amount ($) *</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -473,7 +548,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description *</Label>
                 <Input
                   id="description"
                   type="text"
@@ -486,13 +561,17 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
 
               {transferType !== 'internal' && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                  <p className="text-sm text-blue-800 font-medium">
                     <strong>Transfer Fee:</strong> {transferType === 'international' ? '$25.00' : '$15.00'} 
                     {transferType === 'international' && ' + exchange rate markup'}
                   </p>
                   <p className="text-xs text-blue-600 mt-1">
                     Processing time: {transferType === 'international' ? '3-5 business days' : '1-3 business days'}
                   </p>
+                  <div className="flex items-center mt-2 text-xs text-green-700">
+                    <Mail className="h-3 w-3 mr-1" />
+                    Email confirmations will be sent to all parties
+                  </div>
                 </div>
               )}
 
@@ -511,7 +590,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, a
                   className="flex-1 bank-gradient hover:opacity-90 transition-opacity"
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : transferType === 'internal' ? 'Transfer' : 'Send Transfer'}
+                  {loading ? 'Processing...' : transferType === 'internal' ? 'Transfer Now' : 'Send Transfer'}
                 </Button>
               </div>
             </form>

@@ -68,6 +68,14 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
     return 'Available Balance';
   };
 
+  const formatAccountNumber = (accountNumber: string) => {
+    // Format as XXXX-XXXX-XX for better readability
+    if (accountNumber.length === 10) {
+      return `${accountNumber.slice(0, 4)}-${accountNumber.slice(4, 8)}-${accountNumber.slice(8)}`;
+    }
+    return accountNumber;
+  };
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -94,15 +102,17 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
               <p className="text-2xl font-bold">{formatBalance(account.balance)}</p>
             </div>
             
-            <div className="pt-2 border-t border-white/20 space-y-2">
+            <div className="pt-2 border-t border-white/20 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs">Account Number</p>
-                  <p className="text-white font-mono text-sm">{account.accountNumber}</p>
+                  <p className="text-white font-mono text-lg font-bold tracking-wider">
+                    {formatAccountNumber(account.accountNumber)}
+                  </p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(account.accountNumber, 'Account number')}
-                  className="p-1 hover:bg-white/20 rounded transition-colors"
+                  className="p-2 hover:bg-white/20 rounded transition-colors"
                 >
                   <Copy className="h-4 w-4" />
                 </button>
@@ -111,11 +121,11 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/80 text-xs">Routing Number</p>
-                  <p className="text-white font-mono text-sm">{account.routingNumber}</p>
+                  <p className="text-white font-mono text-base font-semibold tracking-wider">{account.routingNumber}</p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(account.routingNumber, 'Routing number')}
-                  className="p-1 hover:bg-white/20 rounded transition-colors"
+                  className="p-2 hover:bg-white/20 rounded transition-colors"
                 >
                   <Copy className="h-4 w-4" />
                 </button>
@@ -127,7 +137,11 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
         <div className="p-4 bg-white">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Account Status</span>
-            <span className="text-bank-green-600 font-medium">Active</span>
+            <span className="text-bank-green-600 font-medium">Active & Verified</span>
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>FDIC Insured</span>
+            <span>US Bank Member</span>
           </div>
         </div>
       </CardContent>

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -46,6 +47,7 @@ interface AuthContextType {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
   transferFunds: (fromAccountId: string, toAccountId: string, amount: number, description: string) => boolean;
+  sendDomesticTransfer: (fromAccountId: string, recipientDetails: any, amount: number, description: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,16 +56,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const US_BANK_ROUTING = '091000022';
 
 const generateAccountNumber = (accountType: string) => {
-  // Generate realistic US Bank account numbers
+  // Generate complete 10-digit US Bank account numbers
   const prefix = accountType === 'checking' ? '1531' : accountType === 'savings' ? '1532' : '4441';
-  const randomDigits = Math.floor(100000000 + Math.random() * 900000000);
-  return `${prefix}${randomDigits}`;
+  const randomDigits = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
+  return `${prefix}${randomDigits}`.substring(0, 10); // Ensure exactly 10 digits
 };
 
 const generateReceiptNumber = () => {
   const timestamp = Date.now().toString();
   const random = Math.floor(1000 + Math.random() * 9000);
   return `USB${timestamp.slice(-6)}${random}`;
+};
+
+const simulateEmailAlert = (email: string, type: 'transfer' | 'receipt', details: any) => {
+  console.log(`📧 Email Alert Sent to: ${email}`);
+  console.log(`Alert Type: ${type}`);
+  console.log('Details:', details);
+  
+  // Simulate email delay
+  setTimeout(() => {
+    console.log(`✅ Email delivered to ${email}`);
+  }, 2000);
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -223,7 +236,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendOTP = (): string => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     setCurrentOTP(otp);
-    console.log('OTP sent to email:', otp);
+    console.log('📧 OTP Email sent to:', user?.email || 'email');
+    console.log('🔐 Your OTP Code:', otp);
+    
+    // Simulate email sending
+    if (user?.email) {
+      simulateEmailAlert(user.email, 'receipt', {
+        type: 'OTP Verification',
+        code: otp,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     return otp;
   };
 
@@ -314,6 +338,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toName: toAccount.name
       }
     });
+
+    // Send email alert
+    if (user.email) {
+      simulateEmailAlert(user.email, 'transfer', {
+        type: 'Internal Transfer',
+        amount: amount,
+        from: fromAccount.name,
+        to: toAccount.name,
+        receiptNumber: receiptNumber,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    return true;
+  };
+
+  const sendDomesticTransfer = (fromAccountId: string, recipientDetails: any, amount: number, description: string): boolean => {
+    if (!user) return false;
+    
+    const fromAccount = user.accounts.find(acc => acc.id === fromAccountId);
+    if (!fromAccount || fromAccount.balance < amount) {
+      return false;
+    }
+
+    const receiptNumber = generateReceiptNumber();
+    
+    // Create debit transaction for domestic transfer
+    addTransaction({
+      accountId: fromAccountId,
+      type: 'debit',
+      amount,
+      description: `Domestic Transfer to ${recipientDetails.recipientName} (${recipientDetails.bankName})`,
+      balance: fromAccount.balance - amount,
+      receiptNumber,
+      transferDetails: {
+        fromAccount: fromAccount.accountNumber,
+        toAccount: recipientDetails.accountNumber,
+        fromName: fromAccount.name,
+        toName: recipientDetails.recipientName
+      }
+    });
+
+    // Send comprehensive email alert
+    if (user.email) {
+      simulateEmailAlert(user.email, 'transfer', {
+        type: 'Domestic Transfer Sent',
+        amount: amount,
+        recipient: recipientDetails.recipientName,
+        recipientBank: recipientDetails.bankName,
+        recipientAccount: recipientDetails.accountNumber,
+        routingNumber: recipientDetails.routingNumber,
+        receiptNumber: receiptNumber,
+        timestamp: new Date().toISOString(),
+        status: 'Processing - Will arrive in 1-3 business days'
+      });
+
+      // Simulate recipient notification
+      if (recipientDetails.recipientEmail) {
+        simulateEmailAlert(recipientDetails.recipientEmail, 'receipt', {
+          type: 'Incoming Transfer',
+          amount: amount,
+          sender: user.name,
+          senderBank: 'US Bank',
+          receiptNumber: receiptNumber,
+          timestamp: new Date().toISOString(),
+          status: 'Transfer incoming - Will arrive in 1-3 business days'
+        });
+      }
+    }
     
     return true;
   };
@@ -329,7 +422,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sendOTP,
       transactions,
       addTransaction,
-      transferFunds
+      transferFunds,
+      sendDomesticTransfer
     }}>
       {children}
     </AuthContext.Provider>
