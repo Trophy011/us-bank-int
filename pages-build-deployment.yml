@@ -1,0 +1,36 @@
+name: US Bank Pages Build and Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js (optional, for builds like React/Vue)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies (if needed)
+        run: |
+          # Uncomment and adjust if your project requires dependencies
+          # npm ci
+          echo "Skipping dependency installation for static site"
+
+      - name: Build
+        run: |
+          # Add build commands if your project needs them (e.g., npm run build)
+          # For a static site, this might be empty or just copy files
+          echo "Building US Bank static site"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}  # Use the secret you created
+          publish_dir: ./  # Adjust to your build output directory (e.g., ./dist or ./build)

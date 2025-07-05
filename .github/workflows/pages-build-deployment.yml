@@ -1,3 +1,4 @@
+
 name: US Bank Online Banking - Build and Deployment
 
 on:
@@ -5,25 +6,26 @@ on:
     branches:
       - main
 
-permissions:
-  contents: Add this to allow write access
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
       - name: Install dependencies
         run: npm ci
+
       - name: Build US Bank Online Banking
         run: npm run build
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.US_BANK }} 
-          publish_dir: ./dist  # Fix the directory path
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
