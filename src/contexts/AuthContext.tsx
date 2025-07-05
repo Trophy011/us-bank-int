@@ -5,6 +5,11 @@ interface User {
   email: string;
   name: string;
   phone: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  ssn?: string;
   accounts: Account[];
   transactions: Transaction[];
   isAdmin?: boolean;
@@ -58,6 +63,7 @@ interface AuthContextType {
   sendDomesticTransfer: (fromAccountId: string, recipientDetails: any, amount: number, description: string) => boolean;
   transferToUSBankAccount: (fromAccountId: string, toAccountNumber: string, amount: number, description: string) => boolean;
   getAllUsers: () => User[];
+  updateUserProfile: (profileData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -152,6 +158,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
     }
   }, []);
+
+  const updateUserProfile = (profileData: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      ...profileData
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+    
+    // Update in registered users list
+    const updatedRegisteredUsers = registeredUsers.map(u => 
+      u.id === updatedUser.id ? updatedUser : u
+    );
+    setRegisteredUsers(updatedRegisteredUsers);
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
+  };
 
   const updateAccountBalance = (accountId: string, newBalance: number) => {
     if (!user) return;
@@ -595,7 +620,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       transferFunds,
       sendDomesticTransfer,
       transferToUSBankAccount,
-      getAllUsers
+      getAllUsers,
+      updateUserProfile
     }}>
       {children}
     </AuthContext.Provider>

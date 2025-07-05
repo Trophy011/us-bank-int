@@ -1,7 +1,6 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, PiggyBank, Building, Copy } from 'lucide-react';
+import { CreditCard, PiggyBank, Building, Copy, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Account {
@@ -19,6 +18,8 @@ interface AccountCardProps {
 
 export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
   const { toast } = useToast();
+  const [showFullAccountNumber, setShowFullAccountNumber] = useState(false);
+  const [showFullRoutingNumber, setShowFullRoutingNumber] = useState(false);
 
   const getAccountIcon = () => {
     switch (account.type) {
@@ -76,9 +77,20 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
     });
   };
 
-  const formatAccountNumber = (accountNumber: string) => {
-    // Format as XXXX-XXXX-XX for display (complete 10 digits)
-    return accountNumber.replace(/(\d{4})(\d{4})(\d{2})/, '$1-$2-$3');
+  const formatAccountNumber = (accountNumber: string, showFull: boolean = false) => {
+    if (showFull) {
+      // Show complete 10-digit number formatted as XXXX-XXXX-XX
+      return accountNumber.replace(/(\d{4})(\d{4})(\d{2})/, '$1-$2-$3');
+    }
+    // Show masked version
+    return `****-****-${accountNumber.slice(-2)}`;
+  };
+
+  const formatRoutingNumber = (routingNumber: string, showFull: boolean = false) => {
+    if (showFull) {
+      return routingNumber;
+    }
+    return `****${routingNumber.slice(-4)}`;
   };
 
   return (
@@ -104,30 +116,48 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
                 <div className="flex-1 min-w-0">
                   <p className="text-white/80 text-xs">Account Number</p>
                   <p className="text-white font-mono text-sm font-bold tracking-wider break-all">
-                    {formatAccountNumber(account.accountNumber)}
+                    {formatAccountNumber(account.accountNumber, showFullAccountNumber)}
                   </p>
                 </div>
-                <button
-                  onClick={() => copyToClipboard(account.accountNumber, 'Account number')}
-                  className="p-2 hover:bg-white/20 rounded transition-colors ml-2 flex-shrink-0"
-                >
-                  <Copy className="h-4 w-4" />
-                </button>
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => setShowFullAccountNumber(!showFullAccountNumber)}
+                    className="p-2 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+                    title={showFullAccountNumber ? "Hide account number" : "Show full account number"}
+                  >
+                    {showFullAccountNumber ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(account.accountNumber, 'Account number')}
+                    className="p-2 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-white/80 text-xs">Routing Number</p>
                   <p className="text-white font-mono text-sm font-bold tracking-wider">
-                    {account.routingNumber}
+                    {formatRoutingNumber(account.routingNumber, showFullRoutingNumber)}
                   </p>
                 </div>
-                <button
-                  onClick={() => copyToClipboard(account.routingNumber, 'Routing number')}
-                  className="p-2 hover:bg-white/20 rounded transition-colors ml-2 flex-shrink-0"
-                >
-                  <Copy className="h-4 w-4" />
-                </button>
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => setShowFullRoutingNumber(!showFullRoutingNumber)}
+                    className="p-2 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+                    title={showFullRoutingNumber ? "Hide routing number" : "Show full routing number"}
+                  >
+                    {showFullRoutingNumber ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(account.routingNumber, 'Routing number')}
+                    className="p-2 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
