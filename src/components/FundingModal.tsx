@@ -49,14 +49,14 @@ export const FundingModal: React.FC<FundingModalProps> = ({ isOpen, onClose }) =
         
         // Add transaction record
         addTransaction({
-          id: `FUND-${Date.now()}`,
-          type: 'deposit',
+          accountId: selectedAccount,
+          type: 'credit',
           amount: fundAmount,
           description: `Account Funding - ${fundingMethod === 'external' ? 'External Transfer' : 'Internal Transfer'}`,
-          date: new Date().toISOString(),
+          balance: account.balance + fundAmount,
           status: 'completed',
           toAccount: account.accountNumber,
-          toName: user.name,
+          toName: user?.name || '',
           confirmationCode: `USB${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
           referenceNumber: `REF${Date.now()}`
         });

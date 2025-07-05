@@ -6,6 +6,7 @@ interface User {
   name: string;
   phone: string;
   accounts: Account[];
+  transactions: Transaction[];
   isAdmin?: boolean;
 }
 
@@ -26,6 +27,13 @@ interface Transaction {
   description: string;
   date: string;
   balance: number;
+  status?: string;
+  fromAccount?: string;
+  toAccount?: string;
+  fromName?: string;
+  toName?: string;
+  confirmationCode?: string;
+  referenceNumber?: string;
   receiptNumber?: string;
   transferDetails?: {
     fromAccount?: string;
@@ -45,6 +53,7 @@ interface AuthContextType {
   sendOTP: () => string;
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
+  updateAccountBalance: (accountId: string, newBalance: number) => void;
   transferFunds: (fromAccountId: string, toAccountId: string, amount: number, description: string) => boolean;
   sendDomesticTransfer: (fromAccountId: string, recipientDetails: any, amount: number, description: string) => boolean;
   transferToUSBankAccount: (fromAccountId: string, toAccountNumber: string, amount: number, description: string) => boolean;
@@ -118,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: 'Administrator',
         phone: '+1 (555) 000-0000',
         isAdmin: true,
+        transactions: [],
         accounts: [
           {
             id: 'admin-acc1',
@@ -142,6 +152,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
     }
   }, []);
+
+  const updateAccountBalance = (accountId: string, newBalance: number) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      accounts: user.accounts.map(account => 
+        account.id === accountId ? { ...account, balance: newBalance } : account
+      )
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+    
+    // Update in registered users list
+    const updatedRegisteredUsers = registeredUsers.map(u => 
+      u.id === updatedUser.id ? updatedUser : u
+    );
+    setRegisteredUsers(updatedRegisteredUsers);
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Simulate API call
@@ -190,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email,
       name,
       phone,
+      transactions: [],
       accounts: [
         {
           id: 'acc_' + Date.now(),
@@ -272,27 +304,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTransactions(updatedTransactions);
     
     if (user) {
+      // Update user's transactions
+      const updatedUser = {
+        ...user,
+        transactions: updatedTransactions
+      };
+      setUser(updatedUser);
+      localStorage.setItem('bankUser', JSON.stringify(updatedUser));
       localStorage.setItem(`transactions_${user.id}`, JSON.stringify(updatedTransactions));
       
-      // Update account balance
-      const updatedUser = { ...user };
-      const account = updatedUser.accounts.find(acc => acc.id === transaction.accountId);
-      if (account) {
-        if (transaction.type === 'credit') {
-          account.balance += transaction.amount;
-        } else if (transaction.type === 'debit') {
-          account.balance -= transaction.amount;
-        }
-        setUser(updatedUser);
-        localStorage.setItem('bankUser', JSON.stringify(updatedUser));
-        
-        // Update in registered users list
-        const updatedRegisteredUsers = registeredUsers.map(u => 
-          u.id === updatedUser.id ? updatedUser : u
-        );
-        setRegisteredUsers(updatedRegisteredUsers);
-        localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
-      }
+      // Update in registered users list
+      const updatedRegisteredUsers = registeredUsers.map(u => 
+        u.id === updatedUser.id ? updatedUser : u
+      );
+      setRegisteredUsers(updatedRegisteredUsers);
+      localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
     }
   };
 
@@ -565,6 +591,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sendOTP,
       transactions,
       addTransaction,
+      updateAccountBalance,
       transferFunds,
       sendDomesticTransfer,
       transferToUSBankAccount,

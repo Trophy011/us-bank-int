@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -101,19 +102,18 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
       }
 
       // Add transaction for sender
-      const transactionId = `TXN-${Date.now()}`;
       const confirmationCode = `USB${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
 
       addTransaction({
-        id: transactionId,
+        accountId: fromAccount,
         type: 'transfer',
         amount: -transferAmount,
         description: `Transfer to ${finalRecipientName}`,
-        date: new Date().toISOString(),
+        balance: sourceAccount.balance - transferAmount,
         status: 'completed',
         fromAccount: sourceAccount.accountNumber,
         toAccount: toAccount,
-        fromName: user?.name,
+        fromName: user?.name || '',
         toName: finalRecipientName,
         confirmationCode,
         referenceNumber: `REF${Date.now()}`
@@ -122,15 +122,15 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
       // Add transaction for recipient if they're a US Bank customer
       if (lookupResult) {
         addTransaction({
-          id: `TXN-${Date.now() + 1}`,
+          accountId: fromAccount, // This would need to be the recipient's account ID in a real system
           type: 'transfer',
           amount: transferAmount,
           description: `Transfer from ${user?.name}`,
-          date: new Date().toISOString(),
+          balance: sourceAccount.balance, // This would be recipient's balance in a real system
           status: 'completed',
           fromAccount: sourceAccount.accountNumber,
           toAccount: toAccount,
-          fromName: user?.name,
+          fromName: user?.name || '',
           toName: finalRecipientName,
           confirmationCode,
           referenceNumber: `REF${Date.now()}`
