@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccountCard } from '@/components/AccountCard';
@@ -63,19 +62,9 @@ interface TransactionListProps {
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onTransactionClick }) => {
-  const safeTransactions = transactions || [];
-  
-  if (safeTransactions.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">No transactions found</p>
-      </div>
-    );
-  }
-
   return (
     <ul className="divide-y divide-gray-200">
-      {safeTransactions.slice(0, 5).map((transaction) => (
+      {transactions.slice(0, 5).map((transaction) => (
         <TransactionItem
           key={transaction.id}
           transaction={transaction}
@@ -120,21 +109,8 @@ export const Dashboard: React.FC = () => {
   };
 
   const getTotalBalance = () => {
-    if (!user?.accounts || user.accounts.length === 0) return 0;
-    return user.accounts.reduce((total, account) => total + (account.balance || 0), 0);
+    return user?.accounts.reduce((total, account) => total + account.balance, 0) || 0;
   };
-
-  // Show loading or redirect if no user
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bank-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your account...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -171,7 +147,7 @@ export const Dashboard: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2">
                     <User className="h-5 w-5" />
-                    <span className="hidden sm:inline">{user?.name || 'User'}</span>
+                    <span className="hidden sm:inline">{user?.name}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -207,7 +183,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Welcome back, {user?.name || 'User'}!
+                Welcome back, {user?.name}!
               </h2>
               <p className="text-gray-600">Manage your accounts and track your financial activity.</p>
             </div>
@@ -256,15 +232,9 @@ export const Dashboard: React.FC = () => {
         <section className="mb-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-6">Your Accounts</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {user?.accounts && user.accounts.length > 0 ? (
-              user.accounts.map((account) => (
-                <AccountCard key={account.id} account={account} />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <p className="text-gray-500">No accounts found. Please contact support.</p>
-              </div>
-            )}
+            {user?.accounts.map((account) => (
+              <AccountCard key={account.id} account={account} />
+            ))}
           </div>
         </section>
 
@@ -318,7 +288,7 @@ export const Dashboard: React.FC = () => {
         transaction={selectedTransaction}
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
-        userAccountNumber={user?.accounts?.[0]?.accountNumber}
+        userAccountNumber={user?.accounts[0]?.accountNumber}
         userName={user?.name}
       />
     </div>
