@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/LoginForm';
 import { Dashboard } from '@/components/Dashboard';
 import { Toaster } from '@/components/ui/toaster';
 
 const AppContent = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [showDashboard, setShowDashboard] = useState(false);
+
+  // Update showDashboard when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setShowDashboard(true);
+    } else {
+      setShowDashboard(false);
+    }
+  }, [isAuthenticated, user]);
 
   const handleLoginSuccess = () => {
     setShowDashboard(true);
   };
 
-  if (isAuthenticated && showDashboard) {
+  // Show dashboard if user is authenticated
+  if (isAuthenticated && user && showDashboard) {
     return <Dashboard />;
   }
 
@@ -49,7 +60,6 @@ const AppContent = () => {
           </p>
         </div>
 
-        {/* Trust Indicators */}
         <div className="mt-6 grid grid-cols-3 gap-4 animate-fade-in animation-delay-1500">
           <div className="text-center p-3 bg-white/50 backdrop-blur-sm rounded-lg border border-gray-200">
             <div className="text-bank-blue-600 font-bold text-lg">24/7</div>
