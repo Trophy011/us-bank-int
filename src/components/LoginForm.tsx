@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,11 +32,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
     setLoading(true);
 
     try {
+      console.log('Form submission started', { step, isLogin });
+      
       if (step === 'credentials') {
         let success = false;
         
         if (isLogin) {
+          console.log('Attempting login...');
           success = await login(formData.email, formData.password);
+          console.log('Login result:', success);
+          
           if (!success) {
             toast({
               title: "Account Not Found",
@@ -48,7 +52,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             return;
           }
         } else {
+          console.log('Attempting registration...');
           success = await register(formData.email, formData.password, formData.name, formData.phone);
+          console.log('Registration result:', success);
+          
           if (!success) {
             toast({
               title: "Registration Failed",
@@ -62,6 +69,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
         if (success) {
           const otp = sendOTP();
+          console.log('OTP sent:', otp);
           toast({
             title: "Verification Required",
             description: `Security code sent to ${formData.email}. Code: ${otp}`,
@@ -69,12 +77,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           setStep('otp');
         }
       } else {
+        console.log('Verifying OTP:', formData.otp);
         const isValidOTP = verifyOTP(formData.otp);
+        console.log('OTP verification result:', isValidOTP);
+        
         if (isValidOTP) {
           toast({
             title: "Welcome to US Bank",
             description: "You have successfully signed in to your account.",
           });
+          console.log('Calling onSuccess callback');
           onSuccess();
         } else {
           toast({
@@ -85,6 +97,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         }
       }
     } catch (error) {
+      console.error('Login/Registration error:', error);
       toast({
         title: "System Error",
         description: "Please try again in a moment.",
