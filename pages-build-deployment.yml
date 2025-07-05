@@ -1,4 +1,4 @@
-name: US Bank Pages Build and Deployment
+name: US Bank Online Banking - Building and Deployment 
 
 on:
   push:
@@ -34,5 +34,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.BANK_TOKEN }}  # Use the secret you created
+          github_token: ${{ secrets.US_BANK_TOKEN }}  # Use the secret you created
           publish_dir: ./  # Adjust to your build output directory (e.g., ./dist or ./build)
