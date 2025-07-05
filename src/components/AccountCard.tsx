@@ -77,7 +77,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
   };
 
   const formatAccountNumber = (accountNumber: string) => {
-    // Format as XXXX-XXXX-XX for display
+    // Format as XXXX-XXXX-XX for display (complete 10 digits)
     return accountNumber.replace(/(\d{4})(\d{4})(\d{2})/, '$1-$2-$3');
   };
 
