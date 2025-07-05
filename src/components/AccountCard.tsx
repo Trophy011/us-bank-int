@@ -76,6 +76,11 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
     });
   };
 
+  const formatAccountNumber = (accountNumber: string) => {
+    // Format as XXXX-XXXX-XX for display
+    return accountNumber.replace(/(\d{4})(\d{4})(\d{2})/, '$1-$2-$3');
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 transaction-hover">
       <CardContent className="p-0">
@@ -96,10 +101,10 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
             
             <div className="pt-2 border-t border-white/20 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-white/80 text-xs">Account Number</p>
-                  <p className="text-white font-mono text-base font-bold tracking-wider break-all">
-                    {account.accountNumber}
+                  <p className="text-white font-mono text-sm font-bold tracking-wider break-all">
+                    {formatAccountNumber(account.accountNumber)}
                   </p>
                 </div>
                 <button
@@ -111,9 +116,9 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
               </div>
               
               <div className="flex items-center justify-between">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-white/80 text-xs">Routing Number</p>
-                  <p className="text-white font-mono text-base font-bold tracking-wider">
+                  <p className="text-white font-mono text-sm font-bold tracking-wider">
                     {account.routingNumber}
                   </p>
                 </div>

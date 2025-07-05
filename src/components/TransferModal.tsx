@@ -1,709 +1,295 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
+import { ArrowRightLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRightLeft, Building2, Globe, CheckCircle, Mail, Building } from 'lucide-react';
-import { TransferReceipt } from './TransferReceipt';
-
-interface Account {
-  id: string;
-  type: 'checking' | 'savings' | 'credit';
-  accountNumber: string;
-  routingNumber: string;
-  balance: number;
-  name: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { lookupAccountName, isValidUSBankAccount } from '@/services/accountLookup';
 
 interface TransferModalProps {
   isOpen: boolean;
   onClose: () => void;
-  accounts: Account[];
 }
 
-export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, accounts }) => {
-  const [transferType, setTransferType] = useState<'internal' | 'us-bank' | 'domestic' | 'international'>('internal');
+export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose }) => {
   const [fromAccount, setFromAccount] = useState('');
   const [toAccount, setToAccount] = useState('');
   const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // US Bank transfer fields
-  const [usBankAccountNumber, setUsBankAccountNumber] = useState('');
-
-  // External transfer fields
+  const [memo, setMemo] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [recipientName, setRecipientName] = useState('');
-  const [recipientEmail, setRecipientEmail] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [routingNumber, setRoutingNumber] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [swiftCode, setSwiftCode] = useState('');
-  const [country, setCountry] = useState('');
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupResult, setLookupResult] = useState<{ name: string; accountType: string } | null>(null);
 
-  // Receipt state
-  const [showReceipt, setShowReceipt] = useState(false);
-  const [receiptDetails, setReceiptDetails] = useState<any>(null);
-
-  const { transferFunds, sendDomesticTransfer, transferToUSBankAccount, user } = useAuth();
+  const { user, updateAccountBalance, addTransaction } = useAuth();
   const { toast } = useToast();
 
-  const eligibleFromAccounts = accounts.filter(acc => acc.type !== 'credit');
-  const eligibleToAccounts = accounts.filter(acc => acc.id !== fromAccount);
-
-  const resetForm = () => {
-    setFromAccount('');
-    setToAccount('');
-    setAmount('');
-    setDescription('');
-    setUsBankAccountNumber('');
+  const handleAccountNumberChange = async (value: string) => {
+    setToAccount(value);
     setRecipientName('');
-    setRecipientEmail('');
-    setBankName('');
-    setRoutingNumber('');
-    setAccountNumber('');
-    setSwiftCode('');
-    setCountry('');
-  };
+    setLookupResult(null);
 
-  const handleUSBankTransfer = async () => {
-    const transferAmount = parseFloat(amount);
-    const sourceAccount = accounts.find(acc => acc.id === fromAccount);
-    
-    if (sourceAccount && transferAmount > sourceAccount.balance) {
-      toast({
-        title: "Insufficient Funds",
-        description: "You don't have enough balance in the source account.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const success = transferToUSBankAccount(fromAccount, usBankAccountNumber, transferAmount, description);
-    
-    if (success && sourceAccount) {
-      toast({
-        title: "✅ US Bank Transfer Successful",
-        description: (
-          <div className="space-y-1">
-            <p className="font-medium">${transferAmount.toFixed(2)} transferred successfully</p>
-            <p className="text-sm">To account: {usBankAccountNumber}</p>
-            <div className="flex items-center text-sm text-green-600">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Funds available immediately
-            </div>
-            <div className="flex items-center text-sm text-green-600">
-              <Mail className="h-3 w-3 mr-1" />
-              Email confirmations sent to both parties
-            </div>
-          </div>
-        ),
-      });
-      return true;
-    } else {
-      toast({
-        title: "Transfer Failed",
-        description: "Unable to find the recipient account or insufficient funds.",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const handleInternalTransfer = async () => {
-    const transferAmount = parseFloat(amount);
-    const sourceAccount = accounts.find(acc => acc.id === fromAccount);
-    const destAccount = accounts.find(acc => acc.id === toAccount);
-    
-    if (sourceAccount && transferAmount > sourceAccount.balance) {
-      toast({
-        title: "Insufficient Funds",
-        description: "You don't have enough balance in the source account.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const success = transferFunds(fromAccount, toAccount, transferAmount, description);
-    
-    if (success && sourceAccount && destAccount) {
-      // Show receipt
-      setReceiptDetails({
-        receiptNumber: `USB${Date.now().toString().slice(-6)}${Math.floor(1000 + Math.random() * 9000)}`,
-        amount: transferAmount,
-        fromAccount: sourceAccount.accountNumber,
-        toAccount: destAccount.accountNumber,
-        fromName: sourceAccount.name,
-        toName: destAccount.name,
-        date: new Date().toISOString(),
-        description
-      });
-      setShowReceipt(true);
-      
-      toast({
-        title: "✅ Transfer Successful",
-        description: (
-          <div className="space-y-1">
-            <p className="font-medium">${transferAmount.toFixed(2)} transferred successfully</p>
-            <div className="flex items-center text-sm text-green-600">
-              <Mail className="h-3 w-3 mr-1" />
-              Email confirmation sent
-            </div>
-          </div>
-        ),
-      });
-      return true;
-    } else {
-      toast({
-        title: "Transfer Failed",
-        description: "Unable to process the transfer. Please try again.",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const handleDomesticTransfer = async () => {
-    const transferAmount = parseFloat(amount);
-    const sourceAccount = accounts.find(acc => acc.id === fromAccount);
-    
-    if (sourceAccount && transferAmount > sourceAccount.balance) {
-      toast({
-        title: "Insufficient Funds",
-        description: "You don't have enough balance in the source account.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const recipientDetails = {
-      recipientName,
-      recipientEmail,
-      bankName,
-      routingNumber,
-      accountNumber
-    };
-
-    const success = sendDomesticTransfer(fromAccount, recipientDetails, transferAmount, description);
-    
-    if (success) {
-      toast({
-        title: "🚀 Domestic Transfer Initiated",
-        description: (
-          <div className="space-y-2">
-            <p className="font-medium">${transferAmount.toFixed(2)} to {recipientName}</p>
-            <p className="text-sm">Bank: {bankName}</p>
-            <div className="flex items-center text-sm text-blue-600">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Processing time: 1-3 business days
-            </div>
-            <div className="flex items-center text-sm text-green-600">
-              <Mail className="h-3 w-3 mr-1" />
-              Email confirmations sent to both parties
-            </div>
-          </div>
-        ),
-      });
-      return true;
-    } else {
-      toast({
-        title: "Transfer Failed", 
-        description: "Unable to process the domestic transfer. Please check your details.",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const handleExternalTransfer = async () => {
-    const transferAmount = parseFloat(amount);
-    const sourceAccount = accounts.find(acc => acc.id === fromAccount);
-    
-    if (sourceAccount && transferAmount > sourceAccount.balance) {
-      toast({
-        title: "Insufficient Funds",
-        description: "You don't have enough balance in the source account.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // For international transfers, use the existing addTransaction method
-    const { addTransaction } = useAuth();
-    addTransaction({
-      accountId: fromAccount,
-      type: 'debit',
-      amount: transferAmount,
-      description: transferType === 'international' 
-        ? `International Transfer to ${recipientName} (${bankName}, ${country})` 
-        : `Domestic Transfer to ${recipientName} (${bankName})`,
-      balance: (sourceAccount?.balance || 0) - transferAmount
-    });
-
-    const transferTypeLabel = transferType === 'international' ? 'International' : 'Domestic';
-    toast({
-      title: `🌍 ${transferTypeLabel} Transfer Initiated`,
-      description: (
-        <div className="space-y-1">
-          <p className="font-medium">${transferAmount.toFixed(2)} to {recipientName}</p>
-          <p className="text-sm">Processing time: {transferType === 'international' ? '3-5 business days' : '1-3 business days'}</p>
-          <div className="flex items-center text-sm text-green-600">
-            <Mail className="h-3 w-3 mr-1" />
-            Email confirmation sent
-          </div>
-        </div>
-      ),
-    });
-    
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!fromAccount || !amount || !description) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (transferType === 'internal' && !toAccount) {
-      toast({
-        title: "Missing Information",
-        description: "Please select a destination account.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (transferType === 'us-bank' && !usBankAccountNumber) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter the US Bank account number.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (transferType !== 'internal') {
-      if (!recipientName || !bankName || !accountNumber) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill in all recipient and bank details.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (transferType === 'domestic' && !routingNumber) {
-        toast({
-          title: "Missing Information",
-          description: "Routing number is required for domestic transfers.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (transferType === 'international' && (!swiftCode || !country)) {
-        toast({
-          title: "Missing Information",
-          description: "SWIFT code and country are required for international transfers.",
-          variant: "destructive"
-        });
-        return;
+    if (isValidUSBankAccount(value)) {
+      setIsLookingUp(true);
+      try {
+        const result = await lookupAccountName(value);
+        if (result) {
+          setLookupResult(result);
+          setRecipientName(result.name);
+        }
+      } catch (error) {
+        console.error('Account lookup failed:', error);
+      } finally {
+        setIsLookingUp(false);
       }
     }
+  };
 
-    const transferAmount = parseFloat(amount);
-    if (transferAmount <= 0) {
+  const handleTransfer = async () => {
+    if (!fromAccount || !toAccount || !amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid transfer amount.",
-        variant: "destructive"
+        title: "Invalid Input",
+        description: "Please fill in all required fields with valid values.",
+        variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
+    if (!isValidUSBankAccount(toAccount)) {
+      toast({
+        title: "Invalid Account Number",
+        description: "Please enter a valid 10-digit US Bank account number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const transferAmount = parseFloat(amount);
+    const sourceAccount = user?.accounts.find(acc => acc.id === fromAccount);
+
+    if (!sourceAccount || sourceAccount.balance < transferAmount) {
+      toast({
+        title: "Insufficient Funds",
+        description: "You don't have enough funds in the selected account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      let success = false;
-      if (transferType === 'internal') {
-        success = await handleInternalTransfer();
-      } else if (transferType === 'us-bank') {
-        success = await handleUSBankTransfer();
-      } else if (transferType === 'domestic') {
-        success = await handleDomesticTransfer();
-      } else {
-        success = await handleExternalTransfer();
-      }
-      
-      if (success) {
-        resetForm();
-        if (transferType === 'internal') {
-          // Don't close modal yet, receipt will be shown
-        } else {
-          onClose();
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const finalRecipientName = recipientName || lookupResult?.name || 'Unknown Recipient';
+
+      // Update sender's balance
+      updateAccountBalance(fromAccount, sourceAccount.balance - transferAmount);
+
+      // Check if recipient is also a US Bank customer
+      if (lookupResult) {
+        // Find and update recipient's account if they're in our system
+        const recipientAccount = user?.accounts.find(acc => acc.accountNumber === toAccount);
+        if (recipientAccount) {
+          updateAccountBalance(recipientAccount.id, recipientAccount.balance + transferAmount);
         }
       }
+
+      // Add transaction for sender
+      const transactionId = `TXN-${Date.now()}`;
+      const confirmationCode = `USB${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+
+      addTransaction({
+        id: transactionId,
+        type: 'transfer',
+        amount: -transferAmount,
+        description: `Transfer to ${finalRecipientName}`,
+        date: new Date().toISOString(),
+        status: 'completed',
+        fromAccount: sourceAccount.accountNumber,
+        toAccount: toAccount,
+        fromName: user?.name,
+        toName: finalRecipientName,
+        confirmationCode,
+        referenceNumber: `REF${Date.now()}`
+      });
+
+      // Add transaction for recipient if they're a US Bank customer
+      if (lookupResult) {
+        addTransaction({
+          id: `TXN-${Date.now() + 1}`,
+          type: 'transfer',
+          amount: transferAmount,
+          description: `Transfer from ${user?.name}`,
+          date: new Date().toISOString(),
+          status: 'completed',
+          fromAccount: sourceAccount.accountNumber,
+          toAccount: toAccount,
+          fromName: user?.name,
+          toName: finalRecipientName,
+          confirmationCode,
+          referenceNumber: `REF${Date.now()}`
+        });
+      }
+
+      toast({
+        title: "Transfer Successful",
+        description: `$${transferAmount.toFixed(2)} has been transferred to ${finalRecipientName}.`,
+      });
+
+      // Reset form
+      setFromAccount('');
+      setToAccount('');
+      setAmount('');
+      setRecipientName('');
+      setMemo('');
+      setLookupResult(null);
+      onClose();
+
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
+        title: "Transfer Failed",
+        description: "There was an error processing your transfer.",
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  const getSelectedAccountBalance = (accountId: string) => {
-    const account = accounts.find(acc => acc.id === accountId);
-    return account ? account.balance : 0;
-  };
-
-  const getAccountDisplayName = (account: Account) => {
-    return `${account.name} (****${account.accountNumber.slice(-4)})`;
-  };
-
-  const handleCloseReceipt = () => {
-    setShowReceipt(false);
-    setReceiptDetails(null);
-    onClose();
   };
 
   return (
-    <>
-      <Dialog open={isOpen && !showReceipt} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowRightLeft className="h-5 w-5" />
-              Transfer Funds
-            </DialogTitle>
-            <DialogDescription>
-              Transfer money between your accounts or to any bank worldwide
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Tabs value={transferType} onValueChange={(value) => setTransferType(value as any)} className="mt-4">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="internal" className="flex items-center gap-1 text-xs">
-                <ArrowRightLeft className="h-3 w-3" />
-                Between Accounts
-              </TabsTrigger>
-              <TabsTrigger value="us-bank" className="flex items-center gap-1 text-xs">
-                <Building className="h-3 w-3" />
-                US Bank
-              </TabsTrigger>
-              <TabsTrigger value="domestic" className="flex items-center gap-1 text-xs">
-                <Building2 className="h-3 w-3" />
-                Domestic
-              </TabsTrigger>
-              <TabsTrigger value="international" className="flex items-center gap-1 text-xs">
-                <Globe className="h-3 w-3" />
-                International
-              </TabsTrigger>
-            </TabsList>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ArrowRightLeft className="h-5 w-5" />
+            Transfer Money
+          </DialogTitle>
+        </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              {/* From Account - Common for all transfer types */}
-              <div className="space-y-2">
-                <Label htmlFor="fromAccount">From Account</Label>
-                <Select value={fromAccount} onValueChange={setFromAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {eligibleFromAccounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex justify-between items-center w-full">
-                          <span>{getAccountDisplayName(account)}</span>
-                          <span className="ml-2 text-sm text-gray-500">
-                            ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {fromAccount && (
-                  <p className="text-sm text-gray-600">
-                    Available: ${getSelectedAccountBalance(fromAccount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </p>
-                )}
+        <div className="space-y-4">
+          {/* From Account */}
+          <div className="space-y-2">
+            <Label htmlFor="from-account">From Account</Label>
+            <Select value={fromAccount} onValueChange={setFromAccount}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select source account" />
+              </SelectTrigger>
+              <SelectContent>
+                {user?.accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    <div className="flex justify-between items-center w-full">
+                      <span>{account.name}</span>
+                      <span className="text-sm text-gray-500">
+                        ${account.balance.toFixed(2)}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* To Account */}
+          <div className="space-y-2">
+            <Label htmlFor="to-account">To Account Number</Label>
+            <Input
+              id="to-account"
+              placeholder="Enter 10-digit account number"
+              value={toAccount}
+              onChange={(e) => handleAccountNumberChange(e.target.value)}
+              maxLength={10}
+            />
+            {isLookingUp && (
+              <p className="text-sm text-blue-600">Looking up account...</p>
+            )}
+            {lookupResult && (
+              <div className="p-2 bg-green-50 border border-green-200 rounded text-sm">
+                <p className="font-medium text-green-800">{lookupResult.name}</p>
+                <p className="text-green-600">{lookupResult.accountType} Account</p>
               </div>
+            )}
+          </div>
 
-              <TabsContent value="internal" className="space-y-4 mt-0">
-                <div className="space-y-2">
-                  <Label htmlFor="toAccount">To Account</Label>
-                  <Select value={toAccount} onValueChange={setToAccount}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select destination account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {eligibleToAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          <div className="flex justify-between items-center w-full">
-                            <span>{getAccountDisplayName(account)}</span>
-                            <span className="ml-2 text-sm text-gray-500">
-                              ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TabsContent>
+          {/* Recipient Name */}
+          <div className="space-y-2">
+            <Label htmlFor="recipient-name">Recipient Name</Label>
+            <Input
+              id="recipient-name"
+              placeholder="Enter recipient name"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              disabled={!!lookupResult}
+            />
+            {lookupResult && (
+              <p className="text-xs text-gray-600">
+                Name automatically populated from US Bank records
+              </p>
+            )}
+          </div>
 
-              <TabsContent value="us-bank" className="space-y-4 mt-0">
-                <div className="space-y-2">
-                  <Label htmlFor="usBankAccountNumber">US Bank Account Number *</Label>
-                  <Input
-                    id="usBankAccountNumber"
-                    value={usBankAccountNumber}
-                    onChange={(e) => setUsBankAccountNumber(e.target.value)}
-                    placeholder="1531234567"
-                    maxLength={10}
-                    required
-                  />
-                  <p className="text-xs text-gray-500">
-                    Enter the 10-digit US Bank account number. Transfers are instant and free between US Bank accounts.
-                  </p>
-                </div>
-              </TabsContent>
+          {/* Amount */}
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount</Label>
+            <Input
+              id="amount"
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              step="0.01"
+              min="0.01"
+            />
+          </div>
 
-              <TabsContent value="domestic" className="space-y-4 mt-0">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientName">Recipient Name *</Label>
-                    <Input
-                      id="recipientName"
-                      value={recipientName}
-                      onChange={(e) => setRecipientName(e.target.value)}
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientEmail">Recipient Email</Label>
-                    <Input
-                      id="recipientEmail"
-                      type="email"
-                      value={recipientEmail}
-                      onChange={(e) => setRecipientEmail(e.target.value)}
-                      placeholder="john@example.com"
-                    />
-                    <p className="text-xs text-gray-500">For transfer notifications</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank Name *</Label>
-                    <Input
-                      id="bankName"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="Bank of America"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="routingNumber">Routing Number *</Label>
-                    <Input
-                      id="routingNumber"
-                      value={routingNumber}
-                      onChange={(e) => setRoutingNumber(e.target.value)}
-                      placeholder="021000021"
-                      maxLength={9}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Account Number *</Label>
-                  <Input
-                    id="accountNumber"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="1234567890"
-                    maxLength={17}
-                    required
-                  />
-                </div>
-              </TabsContent>
+          {/* Memo */}
+          <div className="space-y-2">
+            <Label htmlFor="memo">Memo (Optional)</Label>
+            <Input
+              id="memo"
+              placeholder="What's this for?"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+            />
+          </div>
 
-              <TabsContent value="international" className="space-y-4 mt-0">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientName">Recipient Name</Label>
-                    <Input
-                      id="recipientName"
-                      value={recipientName}
-                      onChange={(e) => setRecipientName(e.target.value)}
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientEmail">Recipient Email (Optional)</Label>
-                    <Input
-                      id="recipientEmail"
-                      type="email"
-                      value={recipientEmail}
-                      onChange={(e) => setRecipientEmail(e.target.value)}
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank Name</Label>
-                    <Input
-                      id="bankName"
-                      value={bankName}
-                      onChange={(e) => setBankName(e.target.value)}
-                      placeholder="HSBC Bank"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      placeholder="United Kingdom"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="swiftCode">SWIFT Code</Label>
-                    <Input
-                      id="swiftCode"
-                      value={swiftCode}
-                      onChange={(e) => setSwiftCode(e.target.value)}
-                      placeholder="HBUKGB4B"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number/IBAN</Label>
-                    <Input
-                      id="accountNumber"
-                      value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
-                      placeholder="GB29 NWBK 6016 1331 9268 19"
-                      required
-                    />
-                  </div>
-                </div>
-              </TabsContent>
+          {/* Transfer Speed Notice */}
+          {lookupResult && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800 font-medium">
+                🚀 Instant Transfer - US Bank to US Bank
+              </p>
+              <p className="text-xs text-blue-600">
+                This transfer will be completed immediately
+              </p>
+            </div>
+          )}
 
-              {/* Amount and Description - Common for all transfer types */}
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount ($) *</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min="0.01"
-                  step="0.01"
-                  required
-                />
-              </div>
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleTransfer} 
+              disabled={isLoading || !fromAccount || !toAccount || !amount}
+              className="flex-1"
+            >
+              {isLoading ? 'Processing...' : 'Transfer'}
+            </Button>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Input
-                  id="description"
-                  type="text"
-                  placeholder="What's this transfer for?"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  required
-                />
-              </div>
-
-              {transferType === 'us-bank' && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800 font-medium">
-                    <strong>US Bank Transfer:</strong> Free and instant
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    Funds will be available immediately in the recipient's account
-                  </p>
-                  <div className="flex items-center mt-2 text-xs text-green-700">
-                    <Mail className="h-3 w-3 mr-1" />
-                    Email confirmations will be sent to both parties
-                  </div>
-                </div>
-              )}
-
-              {transferType !== 'internal' && transferType !== 'us-bank' && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 font-medium">
-                    <strong>Transfer Fee:</strong> {transferType === 'international' ? '$25.00' : '$15.00'} 
-                    {transferType === 'international' && ' + exchange rate markup'}
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Processing time: {transferType === 'international' ? '3-5 business days' : '1-3 business days'}
-                  </p>
-                  <div className="flex items-center mt-2 text-xs text-green-700">
-                    <Mail className="h-3 w-3 mr-1" />
-                    Email confirmations will be sent to all parties
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onClose}
-                  className="flex-1"
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="flex-1 bank-gradient hover:opacity-90 transition-opacity"
-                  disabled={loading}
-                >
-                  {loading ? 'Processing...' : 
-                   transferType === 'internal' ? 'Transfer Now' : 
-                   transferType === 'us-bank' ? 'Send to US Bank' :
-                   'Send Transfer'}
-                </Button>
-              </div>
-            </form>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      {/* Transfer Receipt Modal */}
-      {showReceipt && receiptDetails && (
-        <TransferReceipt
-          isOpen={showReceipt}
-          onClose={handleCloseReceipt}
-          transferDetails={receiptDetails}
-        />
-      )}
-    </>
+          {/* Security Notice */}
+          <p className="text-xs text-gray-600 text-center">
+            All transfers are secured with bank-level encryption
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
