@@ -71,6 +71,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
     return 'XXX-XX-XXXX';
   };
 
+  // Don't render if user is not available
+  if (!user) {
+    return null;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -237,25 +242,31 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {user?.accounts.map((account) => (
-                    <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {account.type === 'checking' ? <Building className="h-5 w-5" /> :
-                         account.type === 'savings' ? <PiggyBank className="h-5 w-5" /> :
-                         <CreditCard className="h-5 w-5" />}
-                        <div>
-                          <p className="font-semibold">{account.name}</p>
-                          <p className="text-sm text-gray-600">****{account.accountNumber.slice(-4)}</p>
+                  {user?.accounts && user.accounts.length > 0 ? (
+                    user.accounts.map((account) => (
+                      <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {account.type === 'checking' ? <Building className="h-5 w-5" /> :
+                           account.type === 'savings' ? <PiggyBank className="h-5 w-5" /> :
+                           <CreditCard className="h-5 w-5" />}
+                          <div>
+                            <p className="font-semibold">{account.name}</p>
+                            <p className="text-sm text-gray-600">****{account.accountNumber ? account.accountNumber.slice(-4) : '0000'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">${account.balance ? account.balance.toFixed(2) : '0.00'}</p>
+                          <Badge variant="secondary" className="text-xs">
+                            {account.type ? account.type.charAt(0).toUpperCase() + account.type.slice(1) : 'Account'}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">${account.balance.toFixed(2)}</p>
-                        <Badge variant="secondary" className="text-xs">
-                          {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
-                        </Badge>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No accounts found</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>

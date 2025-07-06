@@ -1,21 +1,37 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/LoginForm';
 import { Dashboard } from '@/components/Dashboard';
 import { Toaster } from '@/components/ui/toaster';
 
 const AppContent = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [showDashboard, setShowDashboard] = useState(false);
 
+  // Sync showDashboard with authentication state
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('User authenticated, showing dashboard:', user);
+      setShowDashboard(true);
+    } else {
+      console.log('User not authenticated, showing login');
+      setShowDashboard(false);
+    }
+  }, [isAuthenticated, user]);
+
   const handleLoginSuccess = () => {
+    console.log('Login success triggered');
     setShowDashboard(true);
   };
 
-  if (isAuthenticated && showDashboard) {
+  // Show dashboard if authenticated or showDashboard is true
+  if ((isAuthenticated && user) || showDashboard) {
+    console.log('Rendering Dashboard');
     return <Dashboard />;
   }
 
+  console.log('Rendering Login Form');
   return (
     <div className="min-h-screen bg-gradient-to-br from-bank-blue-50 via-white to-bank-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated Background Elements */}
