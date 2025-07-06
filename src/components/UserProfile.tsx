@@ -22,7 +22,9 @@ import {
   Eye,
   EyeOff,
   Edit,
-  Camera
+  Camera,
+  Building,
+  PiggyBank
 } from 'lucide-react';
 
 interface UserProfileProps {
