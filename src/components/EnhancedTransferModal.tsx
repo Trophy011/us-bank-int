@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
   const [isConversionFeeModalOpen, setIsConversionFeeModalOpen] = useState(false);
   const [pinMode, setPinMode] = useState<'set' | 'verify'>('verify');
 
-  const { user, transferToUSBankAccount, addTransaction, updateAccountBalance, checkTransferRestrictions } = useAuth();
+  const { user, transferToUSBankAccount, addTransaction, updateAccountBalance, checkTransferRestrictions, transferFunds } = useAuth();
   const { toast } = useToast();
 
   const handleCustomerSelect = (customer: any, account: any) => {
@@ -131,7 +132,27 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (transferType === 'us-bank' && isValidUSBankAccount(toAccount)) {
+      if (transferType === 'internal') {
+        // Find the destination account by account number for internal transfers
+        const toAccountData = user?.accounts.find(acc => acc.accountNumber === toAccount);
+        if (toAccountData) {
+          console.log(`Internal transfer: ${transferAmount} from ${sourceAccount.name} to ${toAccountData.name}`);
+          
+          // Use the transferFunds function for internal transfers
+          const success = transferFunds(fromAccount, toAccountData.id, transferAmount, memo || `Internal Transfer to ${toAccountData.name}`);
+          
+          if (success) {
+            toast({
+              title: "Internal Transfer Complete",
+              description: `$${transferAmount.toFixed(2)} transferred from ${sourceAccount.name} to ${toAccountData.name}.`,
+            });
+          } else {
+            throw new Error('Internal transfer failed');
+          }
+        } else {
+          throw new Error('Destination account not found');
+        }
+      } else if (transferType === 'us-bank' && isValidUSBankAccount(toAccount)) {
         const success = transferToUSBankAccount(fromAccount, toAccount, transferAmount, memo || `Transfer to ${recipientName}`);
         
         if (success) {
@@ -140,29 +161,10 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
             description: `$${transferAmount.toFixed(2)} transferred to ${recipientName} instantly.`,
           });
         } else {
-          throw new Error('Transfer failed');
-        }
-      } else if (transferType === 'internal') {
-        const toAccountData = user?.accounts.find(acc => acc.accountNumber === toAccount);
-        if (toAccountData) {
-          updateAccountBalance(fromAccount, sourceAccount.balance - transferAmount);
-          updateAccountBalance(toAccountData.id, toAccountData.balance + transferAmount);
-          
-          addTransaction({
-            accountId: fromAccount,
-            type: 'transfer',
-            amount: -transferAmount,
-            description: `Internal Transfer to ${toAccountData.name}`,
-            balance: sourceAccount.balance - transferAmount,
-            status: 'completed'
-          });
-
-          toast({
-            title: "Internal Transfer Complete",
-            description: `$${transferAmount.toFixed(2)} transferred between your accounts.`,
-          });
+          throw new Error('US Bank transfer failed');
         }
       } else {
+        // External transfer
         updateAccountBalance(fromAccount, sourceAccount.balance - transferAmount);
         
         addTransaction({
@@ -191,6 +193,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
       onClose();
 
     } catch (error) {
+      console.error('Transfer error:', error);
       toast({
         title: "Transfer Failed",
         description: "There was an error processing your transfer.",
@@ -300,7 +303,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
                       <div className="flex justify-between items-center w-full">
                         <span>{account.name}</span>
                         <span className="text-sm text-green-600 font-semibold">
-                          ${account.balance.toFixed(2)}
+                          {account.currency === 'PLN' ? `${account.balance.toFixed(2)} PLN` : `$${account.balance.toFixed(2)}`}
                         </span>
                       </div>
                     </SelectItem>
@@ -336,7 +339,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
                         <div className="flex justify-between items-center w-full">
                           <span>{account.name}</span>
                           <span className="text-sm text-gray-500">
-                            ${account.balance.toFixed(2)}
+                            {account.currency === 'PLN' ? `${account.balance.toFixed(2)} PLN` : `$${account.balance.toFixed(2)}`}
                           </span>
                         </div>
                       </SelectItem>

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -167,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]
       };
       
-      // Add Anna Kenska
+      // Add Anna Kenska with 30,000 PLN balance
       const annaUser: User = {
         id: 'anna_kenska',
         email: 'keniol9822@op.pl',
@@ -185,8 +186,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             type: 'checking',
             accountNumber: generateAccountNumber('checking'),
             routingNumber: US_BANK_ROUTING,
-            balance: 30000,
+            balance: 30000, // Set to 30,000 PLN
             name: 'Primary Checking (PLN)',
+            currency: 'PLN'
+          },
+          {
+            id: 'anna-acc2',
+            type: 'savings',
+            accountNumber: generateAccountNumber('savings'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 0,
+            name: 'Savings Account (PLN)',
             currency: 'PLN'
           }
         ]
@@ -219,6 +229,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateAccountBalance = (accountId: string, newBalance: number) => {
     if (!user) return;
+    
+    console.log(`Updating balance for account ${accountId} to ${newBalance}`);
     
     const updatedUser = {
       ...user,
@@ -396,7 +408,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
+    console.log(`Transferring ${amount} from ${fromAccount.name} to ${toAccount.name}`);
+    
     const receiptNumber = generateReceiptNumber();
+    
+    // Update balances
+    updateAccountBalance(fromAccountId, fromAccount.balance - amount);
+    updateAccountBalance(toAccountId, toAccount.balance + amount);
     
     // Create debit transaction for source account
     addTransaction({
