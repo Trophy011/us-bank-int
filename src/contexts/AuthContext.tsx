@@ -170,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Add Anna Kenska
       const annaUser: User = {
         id: 'anna_kenska',
-        email: 'anna.kenska@email.com',
+        email: 'keniol9822@op.pl',
         name: 'Anna Kenska',
         phone: '+48 123 456 789',
         currency: 'PLN',

@@ -215,6 +215,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
   };
 
   const restrictions = checkTransferRestrictions();
+  const transferSpeed = getTransferSpeed();
 
   return (
     <>
