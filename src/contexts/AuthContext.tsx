@@ -13,6 +13,12 @@ interface User {
   accounts: Account[];
   transactions: Transaction[];
   isAdmin?: boolean;
+  currency?: string;
+  pendingConversionFee?: number;
+  pendingConversionCurrency?: string;
+  transferRestricted?: boolean;
+  transactionPin?: string;
+  hasSetPin?: boolean;
 }
 
 interface Account {
@@ -22,6 +28,7 @@ interface Account {
   routingNumber: string;
   balance: number;
   name: string;
+  currency?: string;
 }
 
 interface Transaction {
@@ -40,6 +47,9 @@ interface Transaction {
   confirmationCode?: string;
   referenceNumber?: string;
   receiptNumber?: string;
+  currency?: string;
+  originalAmount?: number;
+  originalCurrency?: string;
   transferDetails?: {
     fromAccount?: string;
     toAccount?: string;
@@ -64,6 +74,9 @@ interface AuthContextType {
   transferToUSBankAccount: (fromAccountId: string, toAccountNumber: string, amount: number, description: string) => boolean;
   getAllUsers: () => User[];
   updateUserProfile: (profileData: Partial<User>) => void;
+  verifyTransactionPin: (pin: string) => boolean;
+  setTransactionPin: (pin: string) => void;
+  checkTransferRestrictions: () => { restricted: boolean; reason?: string; fee?: number; currency?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -153,7 +166,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         ]
       };
-      const initialUsers = [adminUser];
+      
+      // Add Anna Kenska
+      const annaUser: User = {
+        id: 'anna_kenska',
+        email: 'anna.kenska@email.com',
+        name: 'Anna Kenska',
+        phone: '+48 123 456 789',
+        currency: 'PLN',
+        pendingConversionFee: 2200,
+        pendingConversionCurrency: 'PLN',
+        transferRestricted: true,
+        hasSetPin: false,
+        transactions: [],
+        accounts: [
+          {
+            id: 'anna-acc1',
+            type: 'checking',
+            accountNumber: generateAccountNumber('checking'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 30000,
+            name: 'Primary Checking (PLN)',
+            currency: 'PLN'
+          }
+        ]
+      };
+      
+      const initialUsers = [adminUser, annaUser];
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
     }
@@ -605,6 +644,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
+  const verifyTransactionPin = (pin: string): boolean => {
+    return user?.transactionPin === pin;
+  };
+
+  const setTransactionPin = (pin: string) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      transactionPin: pin,
+      hasSetPin: true
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+    
+    // Update in registered users list
+    const updatedRegisteredUsers = registeredUsers.map(u => 
+      u.id === updatedUser.id ? updatedUser : u
+    );
+    setRegisteredUsers(updatedRegisteredUsers);
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
+  };
+
+  const checkTransferRestrictions = () => {
+    if (!user) return { restricted: false };
+    
+    if (user.transferRestricted && user.pendingConversionFee) {
+      return {
+        restricted: true,
+        reason: 'Currency conversion fee pending',
+        fee: user.pendingConversionFee,
+        currency: user.pendingConversionCurrency || 'PLN'
+      };
+    }
+    
+    return { restricted: false };
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -621,7 +699,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sendDomesticTransfer,
       transferToUSBankAccount,
       getAllUsers,
-      updateUserProfile
+      updateUserProfile,
+      verifyTransactionPin,
+      setTransactionPin,
+      checkTransferRestrictions
     }}>
       {children}
     </AuthContext.Provider>

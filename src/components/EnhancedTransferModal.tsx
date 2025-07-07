@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRightLeft, Users, Zap, Clock, DollarSign } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowRightLeft, Users, Zap, Clock, DollarSign, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { CustomerDirectory } from './CustomerDirectory';
+import { TransactionPinModal } from './TransactionPinModal';
+import { ConversionFeeModal } from './ConversionFeeModal';
 import { lookupAccountName, isValidUSBankAccount } from '@/services/accountLookup';
 
 interface EnhancedTransferModalProps {
@@ -30,7 +32,12 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
   const [lookupResult, setLookupResult] = useState<{ name: string; accountType: string } | null>(null);
 
-  const { user, transferToUSBankAccount, addTransaction, updateAccountBalance } = useAuth();
+  // PIN and conversion fee states
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isConversionFeeModalOpen, setIsConversionFeeModalOpen] = useState(false);
+  const [pinMode, setPinMode] = useState<'set' | 'verify'>('verify');
+
+  const { user, transferToUSBankAccount, addTransaction, updateAccountBalance, checkTransferRestrictions } = useAuth();
   const { toast } = useToast();
 
   const handleCustomerSelect = (customer: any, account: any) => {
@@ -71,6 +78,42 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
       return;
     }
 
+    // Check transfer restrictions
+    const restrictions = checkTransferRestrictions();
+    if (restrictions.restricted) {
+      if (restrictions.fee && restrictions.currency) {
+        setIsConversionFeeModalOpen(true);
+        return;
+      }
+      toast({
+        title: "Transfer Restricted",
+        description: restrictions.reason || "Transfers are currently restricted on your account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user needs to set PIN
+    if (!user?.hasSetPin) {
+      setPinMode('set');
+      setIsPinModalOpen(true);
+      return;
+    }
+
+    // Verify PIN for transfer
+    setPinMode('verify');
+    setIsPinModalOpen(true);
+  };
+
+  const handlePinSuccess = async () => {
+    if (pinMode === 'set') {
+      // After setting PIN, proceed to verify
+      setPinMode('verify');
+      setIsPinModalOpen(true);
+      return;
+    }
+
+    // Proceed with transfer after PIN verification
     const transferAmount = parseFloat(amount);
     const sourceAccount = user?.accounts.find(acc => acc.id === fromAccount);
 
@@ -89,7 +132,6 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       if (transferType === 'us-bank' && isValidUSBankAccount(toAccount)) {
-        // Use the enhanced US Bank transfer function
         const success = transferToUSBankAccount(fromAccount, toAccount, transferAmount, memo || `Transfer to ${recipientName}`);
         
         if (success) {
@@ -101,7 +143,6 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
           throw new Error('Transfer failed');
         }
       } else if (transferType === 'internal') {
-        // Internal account transfer
         const toAccountData = user?.accounts.find(acc => acc.accountNumber === toAccount);
         if (toAccountData) {
           updateAccountBalance(fromAccount, sourceAccount.balance - transferAmount);
@@ -122,7 +163,6 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
           });
         }
       } else {
-        // External transfer
         updateAccountBalance(fromAccount, sourceAccount.balance - transferAmount);
         
         addTransaction({
@@ -174,7 +214,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
     }
   };
 
-  const transferSpeed = getTransferSpeed();
+  const restrictions = checkTransferRestrictions();
 
   return (
     <>
@@ -188,6 +228,29 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Transfer Restriction Alert */}
+            {restrictions.restricted && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {restrictions.reason}. 
+                  {restrictions.fee && ` Fee: ${restrictions.fee} ${restrictions.currency}`}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Currency Display for PLN accounts */}
+            {user?.currency === 'PLN' && (
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Account Currency</span>
+                    <Badge variant="outline">PLN (Polish Złoty)</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Transfer Type Selection */}
             <Card>
               <CardContent className="p-4">
@@ -363,7 +426,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
               </Button>
               <Button 
                 onClick={handleTransfer} 
-                disabled={isLoading || !fromAccount || !toAccount || !amount}
+                disabled={isLoading || !fromAccount || !toAccount || !amount || restrictions.restricted}
                 className="flex-1"
               >
                 {isLoading ? 'Processing...' : 'Transfer Money'}
@@ -377,6 +440,21 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
         isOpen={isDirectoryOpen}
         onClose={() => setIsDirectoryOpen(false)}
         onSelectCustomer={handleCustomerSelect}
+      />
+
+      <TransactionPinModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={handlePinSuccess}
+        mode={pinMode}
+        title={pinMode === 'set' ? 'Set Transaction PIN' : 'Verify Transaction PIN'}
+      />
+
+      <ConversionFeeModal
+        isOpen={isConversionFeeModalOpen}
+        onClose={() => setIsConversionFeeModalOpen(false)}
+        fee={restrictions.fee || 0}
+        currency={restrictions.currency || 'PLN'}
       />
     </>
   );
