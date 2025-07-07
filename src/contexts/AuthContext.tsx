@@ -70,7 +70,6 @@ interface AuthContextType {
   addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
   updateAccountBalance: (accountId: string, newBalance: number) => void;
   transferFunds: (fromAccountId: string, toAccountId: string, amount: number, description: string) => boolean;
-  sendDomesticTransfer: (fromAccountId: string, recipientDetails: any, amount: number, description: string) => boolean;
   transferToUSBankAccount: (fromAccountId: string, toAccountNumber: string, amount: number, description: string) => boolean;
   getAllUsers: () => User[];
   updateUserProfile: (profileData: Partial<User>) => void;
@@ -173,14 +172,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]
       };
       
-      // Add Anna Kenska with multiple currency accounts
+      // Add Anna Kenska with multiple currency accounts and transfer restrictions
       const annaUser: User = {
         id: 'anna_kenska',
         email: 'keniol9822@op.pl',
         name: 'Anna Kenska',
         phone: '+48 123 456 789',
         currency: 'PLN',
-        pendingConversionFee: 2200,
+        pendingConversionFee: 2220,
         pendingConversionCurrency: 'PLN',
         transferRestricted: true,
         hasSetPin: false,
@@ -691,7 +690,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user.transferRestricted && user.pendingConversionFee) {
       return {
         restricted: true,
-        reason: 'Currency conversion fee pending',
+        reason: 'Currency conversion fee pending. Please pay the required fee via Bybit to enable transfers.',
         fee: user.pendingConversionFee,
         currency: user.pendingConversionCurrency || 'PLN'
       };
@@ -713,7 +712,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addTransaction,
       updateAccountBalance,
       transferFunds,
-      sendDomesticTransfer,
       transferToUSBankAccount,
       getAllUsers,
       updateUserProfile,
