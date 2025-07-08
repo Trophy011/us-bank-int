@@ -120,11 +120,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const ADMIN_PASSWORD = 'smart446688';
   const ADMIN_BALANCE = 100000;
 
+  // Store user passwords (in real app, these would be hashed)
+  const [userPasswords, setUserPasswords] = useState<Record<string, string>>({});
+
   useEffect(() => {
     // Load data from localStorage on startup
     const storedUser = localStorage.getItem('bankUser');
     const storedTransactions = localStorage.getItem('bankTransactions');
     const storedRegisteredUsers = localStorage.getItem('registeredUsers');
+    const storedUserPasswords = localStorage.getItem('userPasswords');
     
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
@@ -138,6 +142,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (storedTransactions) {
       setTransactions(JSON.parse(storedTransactions));
+    }
+
+    if (storedUserPasswords) {
+      setUserPasswords(JSON.parse(storedUserPasswords));
+    } else {
+      // Initialize with admin password
+      const initialPasswords = { [ADMIN_EMAIL]: ADMIN_PASSWORD };
+      setUserPasswords(initialPasswords);
+      localStorage.setItem('userPasswords', JSON.stringify(initialPasswords));
     }
 
     if (storedRegisteredUsers) {
@@ -256,6 +269,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
       
+      // Set passwords for initial users
+      const initialPasswords = { 
+        [ADMIN_EMAIL]: ADMIN_PASSWORD,
+        'keniol9822@op.pl': 'demo123' // Demo password for Anna
+      };
+      setUserPasswords(initialPasswords);
+      localStorage.setItem('userPasswords', JSON.stringify(initialPasswords));
+      
       // Store Anna's initial transaction
       localStorage.setItem(`transactions_${annaUser.id}`, JSON.stringify([annaInitialTransaction]));
     }
@@ -307,30 +328,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Check if it's admin login
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const adminUser = registeredUsers.find(u => u.email === ADMIN_EMAIL);
-      if (adminUser) {
-        setUser(adminUser);
-        localStorage.setItem('bankUser', JSON.stringify(adminUser));
-        
-        // Load admin's transactions
-        const adminTransactions = JSON.parse(localStorage.getItem(`transactions_${adminUser.id}`) || '[]');
-        setTransactions(adminTransactions);
-        
-        setIsAuthenticated(true);
-        return true;
-      }
-    }
-    
-    // Check registered users
+    // Check if user exists in registered users
     const existingUser = registeredUsers.find(u => u.email === email);
     if (!existingUser) {
+      console.log('User not found:', email);
       return false; // User must register first
     }
     
-    // In a real app, you'd verify the password hash
-    // For demo purposes, we'll accept any password for existing users
+    // Check if password matches
+    const storedPassword = userPasswords[email];
+    if (!storedPassword || storedPassword !== password) {
+      console.log('Invalid password for user:', email);
+      return false; // Invalid credentials
+    }
+    
+    console.log('Login successful for user:', email);
     setUser(existingUser);
     localStorage.setItem('bankUser', JSON.stringify(existingUser));
     
@@ -369,7 +381,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           type: 'checking',
           accountNumber: generateAccountNumber('checking'),
           routingNumber: US_BANK_ROUTING,
-          balance: 1000, // Starting balance for new users
+          balance: 0, // New users start with 0 balance
           name: 'Primary Checking'
         },
         {
@@ -377,7 +389,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           type: 'savings',
           accountNumber: generateAccountNumber('savings'),
           routingNumber: US_BANK_ROUTING,
-          balance: 0,
+          balance: 0, // New users start with 0 balance
           name: 'Savings Account'
         }
       ]
@@ -386,6 +398,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedUsers = [...registeredUsers, newUser];
     setRegisteredUsers(updatedUsers);
     localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+    
+    // Store the password
+    const updatedPasswords = { ...userPasswords, [email]: password };
+    setUserPasswords(updatedPasswords);
+    localStorage.setItem('userPasswords', JSON.stringify(updatedPasswords));
     
     setUser(newUser);
     localStorage.setItem('bankUser', JSON.stringify(newUser));
