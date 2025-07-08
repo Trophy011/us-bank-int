@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreditCard, PiggyBank, Building, Copy, Eye, EyeOff } from 'lucide-react';
@@ -10,6 +11,7 @@ interface Account {
   routingNumber: string;
   balance: number;
   name: string;
+  currency?: string;
 }
 
 interface AccountCardProps {
@@ -47,19 +49,30 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
     }
   };
 
-  const formatBalance = (balance: number) => {
+  const getCurrencySymbol = (currency: string = 'USD') => {
+    switch (currency) {
+      case 'PLN': return 'zł';
+      case 'GBP': return '£';
+      case 'EUR': return '€';
+      case 'USD': return '$';
+      default: return '$';
+    }
+  };
+
+  const formatBalance = (balance: number, currency: string = 'USD') => {
     const isNegative = balance < 0;
     const absoluteBalance = Math.abs(balance);
+    const symbol = getCurrencySymbol(currency);
     const formatted = absoluteBalance.toLocaleString('en-US', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2 
     });
     
     if (account.type === 'credit') {
-      return isNegative ? `$${formatted}` : `$0.00`;
+      return isNegative ? `${symbol}${formatted}` : `${symbol}0.00`;
     }
     
-    return `$${formatted}`;
+    return `${symbol}${formatted}`;
   };
 
   const getBalanceLabel = () => {
@@ -108,7 +121,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
           <div className="space-y-3">
             <div>
               <p className="text-white/80 text-sm">{getBalanceLabel()}</p>
-              <p className="text-2xl font-bold">{formatBalance(account.balance)}</p>
+              <p className="text-2xl font-bold">{formatBalance(account.balance, account.currency)}</p>
             </div>
             
             <div className="pt-2 border-t border-white/20 space-y-3">

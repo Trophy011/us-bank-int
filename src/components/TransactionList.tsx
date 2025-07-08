@@ -50,16 +50,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
     });
   };
 
-  const formatAmount = (amount: number, type: string, currency: string = 'USD') => {
-    const getCurrencySymbol = (curr: string) => {
-      switch (curr) {
-        case 'PLN': return 'zł';
-        case 'GBP': return '£';
-        case 'USD': return '$';
-        default: return '$';
-      }
-    };
+  const getCurrencySymbol = (curr: string) => {
+    switch (curr) {
+      case 'PLN': return 'zł';
+      case 'GBP': return '£';
+      case 'EUR': return '€';
+      case 'USD': return '$';
+      default: return '$';
+    }
+  };
 
+  const formatAmount = (amount: number, type: string, currency: string = 'USD') => {
     const symbol = getCurrencySymbol(currency);
     const formatted = amount.toLocaleString('en-US', { 
       minimumFractionDigits: 2,
@@ -74,15 +75,6 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
   };
 
   const formatBalance = (balance: number, currency: string = 'USD') => {
-    const getCurrencySymbol = (curr: string) => {
-      switch (curr) {
-        case 'PLN': return 'zł';
-        case 'GBP': return '£';
-        case 'USD': return '$';
-        default: return '$';
-      }
-    };
-
     const symbol = getCurrencySymbol(currency);
     return `${symbol}${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   };

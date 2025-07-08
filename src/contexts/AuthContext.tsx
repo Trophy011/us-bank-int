@@ -199,7 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             type: 'checking',
             accountNumber: generateAccountNumber('checking'),
             routingNumber: US_BANK_ROUTING,
-            balance: 8327,
+            balance: 0,
             name: 'USD Account',
             currency: 'USD'
           },
@@ -211,6 +211,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             balance: 0,
             name: 'GBP Account',
             currency: 'GBP'
+          },
+          {
+            id: 'anna-acc-eur',
+            type: 'checking',
+            accountNumber: generateAccountNumber('checking'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 0,
+            name: 'EUR Account',
+            currency: 'EUR'
           },
           {
             id: 'anna-acc-savings',
