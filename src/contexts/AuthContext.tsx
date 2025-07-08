@@ -269,10 +269,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
       
-      // Set passwords for initial users
+      // Set passwords for initial users with Anna's correct password
       const initialPasswords = { 
         [ADMIN_EMAIL]: ADMIN_PASSWORD,
-        'keniol9822@op.pl': 'demo123' // Demo password for Anna
+        'keniol9822@op.pl': 'kaja5505' // Updated Anna's correct password
       };
       setUserPasswords(initialPasswords);
       localStorage.setItem('userPasswords', JSON.stringify(initialPasswords));
