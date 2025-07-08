@@ -334,9 +334,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(existingUser);
     localStorage.setItem('bankUser', JSON.stringify(existingUser));
     
-    // Load user's transactions
+    // Load user's transactions - ensure we get the latest transactions
     const userTransactions = JSON.parse(localStorage.getItem(`transactions_${existingUser.id}`) || '[]');
+    console.log(`Loading transactions for user ${existingUser.id}:`, userTransactions);
     setTransactions(userTransactions);
+    
+    // Update user object with current transactions
+    const updatedExistingUser = { ...existingUser, transactions: userTransactions };
+    setUser(updatedExistingUser);
     
     setIsAuthenticated(true);
     return true;
