@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -172,6 +173,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]
       };
       
+      // Create initial transaction for Anna
+      const annaInitialTransaction: Transaction = {
+        id: 'anna_initial_tx_001',
+        accountId: 'anna-acc-pln',
+        type: 'credit',
+        amount: 30000,
+        description: 'You received money from US Bank Management',
+        date: '2025-07-08T00:51:00.000Z', // 12:51am 08/07/25
+        balance: 30000,
+        status: 'completed',
+        receiptNumber: generateReceiptNumber(),
+        currency: 'PLN',
+        transferDetails: {
+          fromName: 'US Bank Management',
+          toName: 'Primary Checking (PLN)'
+        }
+      };
+      
       // Add Anna Kenska with multiple currency accounts and transfer restrictions
       const annaUser: User = {
         id: 'anna_kenska',
@@ -183,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pendingConversionCurrency: 'PLN',
         transferRestricted: true,
         hasSetPin: false,
-        transactions: [],
+        transactions: [annaInitialTransaction],
         accounts: [
           {
             id: 'anna-acc-pln',
@@ -236,6 +255,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const initialUsers = [adminUser, annaUser];
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
+      
+      // Store Anna's initial transaction
+      localStorage.setItem(`transactions_${annaUser.id}`, JSON.stringify([annaInitialTransaction]));
     }
   }, []);
 
