@@ -144,14 +144,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTransactions(JSON.parse(storedTransactions));
     }
 
+    // Always ensure Anna's password is correctly set
+    let passwords = {};
     if (storedUserPasswords) {
-      setUserPasswords(JSON.parse(storedUserPasswords));
-    } else {
-      // Initialize with admin password
-      const initialPasswords = { [ADMIN_EMAIL]: ADMIN_PASSWORD };
-      setUserPasswords(initialPasswords);
-      localStorage.setItem('userPasswords', JSON.stringify(initialPasswords));
+      passwords = JSON.parse(storedUserPasswords);
     }
+    
+    // Force set Anna's correct password
+    passwords[ADMIN_EMAIL] = ADMIN_PASSWORD;
+    passwords['keniol9822@op.pl'] = 'kaja5505';
+    
+    setUserPasswords(passwords);
+    localStorage.setItem('userPasswords', JSON.stringify(passwords));
 
     if (storedRegisteredUsers) {
       setRegisteredUsers(JSON.parse(storedRegisteredUsers));
@@ -269,14 +273,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
       
-      // Set passwords for initial users with Anna's correct password
-      const initialPasswords = { 
-        [ADMIN_EMAIL]: ADMIN_PASSWORD,
-        'keniol9822@op.pl': 'kaja5505' // Updated Anna's correct password
-      };
-      setUserPasswords(initialPasswords);
-      localStorage.setItem('userPasswords', JSON.stringify(initialPasswords));
-      
       // Store Anna's initial transaction
       localStorage.setItem(`transactions_${annaUser.id}`, JSON.stringify([annaInitialTransaction]));
     }
@@ -328,6 +324,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    console.log('Login attempt for:', email);
+    console.log('Available users:', registeredUsers.map(u => u.email));
+    console.log('Stored passwords:', Object.keys(userPasswords));
+    
     // Check if user exists in registered users
     const existingUser = registeredUsers.find(u => u.email === email);
     if (!existingUser) {
@@ -337,6 +337,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Check if password matches
     const storedPassword = userPasswords[email];
+    console.log(`Password check for ${email}: stored="${storedPassword}", provided="${password}"`);
+    
     if (!storedPassword || storedPassword !== password) {
       console.log('Invalid password for user:', email);
       return false; // Invalid credentials
