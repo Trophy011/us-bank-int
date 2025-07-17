@@ -219,6 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pendingConversionCurrency: 'PLN',
         transferRestricted: true,
         hasSetPin: false,
+        transferLimit: 19000, // ✅ GLOBAL transfer limit
         transactions: [annaInitialTransaction],
         accounts: [
           {
