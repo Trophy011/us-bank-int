@@ -229,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             routingNumber: US_BANK_ROUTING,
             balance: 30000,
             name: 'Primary Checking (PLN)',
-            currency: 'PLN 
+            currency: 'PLN',
           },
           {
             id: 'anna-acc-usd',
