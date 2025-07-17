@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: 'Anna Kenska',
         phone: '+48 123 456 789',
         currency: 'PLN',
-        pendingConversionFee: 2220,
+        pendingConversionFee: 700,
         pendingConversionCurrency: 'PLN',
         transferRestricted: true,
         hasSetPin: false,
@@ -228,7 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             routingNumber: US_BANK_ROUTING,
             balance: 30000,
             name: 'Primary Checking (PLN)',
-            currency: 'PLN'
+            currency: 'PLN 
           },
           {
             id: 'anna-acc-usd',
