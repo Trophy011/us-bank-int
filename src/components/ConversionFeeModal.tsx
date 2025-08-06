@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExternalLink, AlertTriangle, CreditCard } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConversionFeeModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
   fee, 
   currency 
 }) => {
+  const { user } = useAuth();
+  
   const handlePayViaBybit = () => {
     // Open Bybit in a new tab
     window.open('https://www.bybit.com', '_blank');
@@ -28,6 +31,9 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
     // Open GCash in a new tab
     window.open('https://www.gcash.com', '_blank');
   };
+
+  // Check if current user is aizalaquian@gmail.com
+  const isGCashOnlyUser = user?.email === 'aizalaquian@gmail.com';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -72,17 +78,19 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
           <div className="space-y-3">
             <p className="text-sm font-medium">Available Payment Methods:</p>
             
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold text-blue-900">Bybit Payment</span>
-                </div>
-                <p className="text-xs text-blue-700">
-                  Pay the conversion fee through Bybit to unlock transfer capabilities.
-                </p>
-              </CardContent>
-            </Card>
+            {!isGCashOnlyUser && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="h-4 w-4 text-blue-600" />
+                    <span className="font-semibold text-blue-900">Bybit Payment</span>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Pay the conversion fee through Bybit to unlock transfer capabilities.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border-green-200 bg-green-50">
               <CardContent className="p-3">
@@ -98,12 +106,14 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <div className="flex gap-2">
-              <Button onClick={handlePayViaBybit} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Pay via Bybit
-              </Button>
-              <Button onClick={handlePayViaGCash} className="flex-1 bg-green-600 hover:bg-green-700">
+            <div className={`flex gap-2 ${isGCashOnlyUser ? 'justify-center' : ''}`}>
+              {!isGCashOnlyUser && (
+                <Button onClick={handlePayViaBybit} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Pay via Bybit
+                </Button>
+              )}
+              <Button onClick={handlePayViaGCash} className={`${isGCashOnlyUser ? 'w-full' : 'flex-1'} bg-green-600 hover:bg-green-700`}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Pay via GCash
               </Button>

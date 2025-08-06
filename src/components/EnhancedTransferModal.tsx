@@ -15,6 +15,7 @@ import { CustomerDirectory } from './CustomerDirectory';
 import { TransactionPinModal } from './TransactionPinModal';
 import { ConversionFeeModal } from './ConversionFeeModal';
 import { lookupAccountName, isValidUSBankAccount } from '@/services/accountLookup';
+import { internationalBanks, getAllCountries, getBanksByCountry } from '@/services/internationalBanks';
 
 interface EnhancedTransferModalProps {
   isOpen: boolean;
@@ -32,6 +33,9 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
   const [lookupResult, setLookupResult] = useState<{ name: string; accountType: string } | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedBank, setSelectedBank] = useState('');
+  const [recipientSwift, setRecipientSwift] = useState('');
 
   // PIN and conversion fee states
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
@@ -370,16 +374,79 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
               )}
             </div>
 
-            {/* Recipient Name for external transfers */}
+            {/* External Transfer Fields */}
             {transferType === 'external' && (
-              <div className="space-y-2">
-                <Label htmlFor="recipient-name">Recipient Name</Label>
-                <Input
-                  id="recipient-name"
-                  placeholder="Enter recipient name"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                />
+              <div className="space-y-4">
+                {/* Country Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="country">Recipient Country</Label>
+                  <Select value={selectedCountry} onValueChange={(value) => {
+                    setSelectedCountry(value);
+                    setSelectedBank('');
+                    setRecipientSwift('');
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAllCountries().map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bank Selection */}
+                {selectedCountry && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bank">Recipient Bank</Label>
+                    <Select value={selectedBank} onValueChange={(value) => {
+                      setSelectedBank(value);
+                      const bank = getBanksByCountry(selectedCountry).find(b => b.name === value);
+                      setRecipientSwift(bank?.swiftCode || '');
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select bank" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getBanksByCountry(selectedCountry).map((bank) => (
+                          <SelectItem key={bank.swiftCode} value={bank.name}>
+                            <div className="flex flex-col">
+                              <span>{bank.name}</span>
+                              <span className="text-xs text-gray-500">{bank.swiftCode}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* SWIFT Code Display */}
+                {recipientSwift && (
+                  <div className="space-y-2">
+                    <Label htmlFor="swift">SWIFT/BIC Code</Label>
+                    <Input
+                      id="swift"
+                      value={recipientSwift}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  </div>
+                )}
+
+                {/* Recipient Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="recipient-name">Recipient Name</Label>
+                  <Input
+                    id="recipient-name"
+                    placeholder="Enter recipient name"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                  />
+                </div>
               </div>
             )}
 
