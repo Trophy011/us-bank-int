@@ -100,6 +100,9 @@ export const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
   };
 
   const formatRoutingNumber = (routingNumber: string, showFull: boolean = false) => {
+    if (!routingNumber) {
+      return 'N/A';
+    }
     if (showFull) {
       return routingNumber;
     }
