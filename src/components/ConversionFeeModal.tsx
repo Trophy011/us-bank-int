@@ -24,6 +24,11 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
     window.open('https://www.bybit.com', '_blank');
   };
 
+  const handlePayViaGCash = () => {
+    // Open GCash in a new tab
+    window.open('https://www.gcash.com', '_blank');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -65,7 +70,8 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
           </Card>
 
           <div className="space-y-3">
-            <p className="text-sm font-medium">Payment Method Required:</p>
+            <p className="text-sm font-medium">Available Payment Methods:</p>
+            
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -73,19 +79,37 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
                   <span className="font-semibold text-blue-900">Bybit Payment</span>
                 </div>
                 <p className="text-xs text-blue-700">
-                  You must pay the conversion fee through Bybit to unlock transfer capabilities.
+                  Pay the conversion fee through Bybit to unlock transfer capabilities.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold text-green-900">GCash Transfer</span>
+                </div>
+                <p className="text-xs text-green-700">
+                  Pay via GCash mobile wallet for instant processing and verification.
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button onClick={handlePayViaBybit} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Pay via Bybit
+              </Button>
+              <Button onClick={handlePayViaGCash} className="flex-1 bg-green-600 hover:bg-green-700">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Pay via GCash
+              </Button>
+            </div>
+            <Button variant="outline" onClick={onClose} className="w-full">
               Close
-            </Button>
-            <Button onClick={handlePayViaBybit} className="flex-1">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Pay via Bybit
             </Button>
           </div>
 
