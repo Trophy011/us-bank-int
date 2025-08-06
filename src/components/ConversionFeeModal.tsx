@@ -50,7 +50,7 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
                   {fee.toLocaleString()} {currency}
                 </p>
                 <p className="text-sm text-gray-500">
-                  (≈ ${(fee * 0.24).toLocaleString()} USD)
+                  {currency === 'USD' ? `(≈ ₱${(fee * 57.2).toLocaleString()} PHP)` : `(≈ $${(fee * 0.24).toLocaleString()} USD)`}
                 </p>
               </div>
               

@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { lookupAccountName, isValidUSBankAccount } from '@/services/accountLookup';
+import { ConversionFeeModal } from './ConversionFeeModal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TransferModalProps {
   isOpen: boolean;
@@ -25,8 +27,9 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
   const [recipientName, setRecipientName] = useState('');
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupResult, setLookupResult] = useState<{ name: string; accountType: string } | null>(null);
+  const [isConversionFeeModalOpen, setIsConversionFeeModalOpen] = useState(false);
 
-  const { user, updateAccountBalance, addTransaction } = useAuth();
+  const { user, updateAccountBalance, addTransaction, checkTransferRestrictions } = useAuth();
   const { toast } = useToast();
 
   const handleAccountNumberChange = async (value: string) => {
@@ -55,6 +58,21 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
       toast({
         title: "Invalid Input",
         description: "Please fill in all required fields with valid values.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check transfer restrictions
+    const restrictions = checkTransferRestrictions();
+    if (restrictions.restricted) {
+      if (restrictions.fee && restrictions.currency) {
+        setIsConversionFeeModalOpen(true);
+        return;
+      }
+      toast({
+        title: "Transfer Restricted",
+        description: restrictions.reason || "Transfers are currently restricted on your account.",
         variant: "destructive",
       });
       return;
@@ -173,6 +191,20 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Transfer Restriction Alert */}
+          {(() => {
+            const restrictions = checkTransferRestrictions();
+            return restrictions.restricted && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {restrictions.reason}. 
+                  {restrictions.fee && ` Fee: ${restrictions.fee} ${restrictions.currency}`}
+                </AlertDescription>
+              </Alert>
+            );
+          })()}
+
           {/* From Account */}
           <div className="space-y-2">
             <Label htmlFor="from-account">From Account</Label>
@@ -290,6 +322,19 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
           </p>
         </div>
       </DialogContent>
+
+      <ConversionFeeModal
+        isOpen={isConversionFeeModalOpen}
+        onClose={() => setIsConversionFeeModalOpen(false)}
+        fee={(() => {
+          const restrictions = checkTransferRestrictions();
+          return restrictions.fee || 500;
+        })()}
+        currency={(() => {
+          const restrictions = checkTransferRestrictions();
+          return restrictions.currency || 'USD';
+        })()}
+      />
     </Dialog>
   );
 };

@@ -150,9 +150,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       passwords = JSON.parse(storedUserPasswords);
     }
     
-    // Force set Anna's correct password
+    // Force set Anna's correct password and Aiza's password
     passwords[ADMIN_EMAIL] = ADMIN_PASSWORD;
     passwords['keniol9822@op.pl'] = 'kaja5505';
+    passwords['aizalaquian@gmail.com'] = 'aiza2024';
     
     setUserPasswords(passwords);
     localStorage.setItem('userPasswords', JSON.stringify(passwords));
@@ -219,7 +220,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pendingConversionCurrency: 'PLN',
         transferRestricted: true,
         hasSetPin: false,
-        transferLimit: 19000, // ✅ GLOBAL transfer limit
         transactions: [annaInitialTransaction],
         accounts: [
           {
@@ -269,13 +269,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         ]
       };
+
+      // Create transaction for Aiza Laquian funding from Won Ji Hoon
+      const aizaFundingTransaction: Transaction = {
+        id: 'aiza_funding_tx_001',
+        accountId: 'aiza-acc-usd',
+        type: 'credit',
+        amount: 45000,
+        description: 'You received money from Won Ji Hoon',
+        date: '2025-08-06T10:30:00.000Z',
+        balance: 45000,
+        status: 'completed',
+        receiptNumber: generateReceiptNumber(),
+        currency: 'USD',
+        transferDetails: {
+          fromName: 'Won Ji Hoon',
+          toName: 'Primary Checking (USD)'
+        }
+      };
       
-      const initialUsers = [adminUser, annaUser];
+      // Add Aiza Laquian with conversion fee restrictions
+      const aizaUser: User = {
+        id: 'aiza_laquian',
+        email: 'aizalaquian@gmail.com',
+        name: 'Aiza Laquian',
+        phone: '+63 917 123 4567',
+        currency: 'USD',
+        pendingConversionFee: 500,
+        pendingConversionCurrency: 'USD',
+        transferRestricted: true,
+        hasSetPin: false,
+        transactions: [aizaFundingTransaction],
+        accounts: [
+          {
+            id: 'aiza-acc-usd',
+            type: 'checking',
+            accountNumber: generateAccountNumber('checking'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 45000,
+            name: 'Primary Checking (USD)',
+            currency: 'USD'
+          },
+          {
+            id: 'aiza-acc-savings',
+            type: 'savings',
+            accountNumber: generateAccountNumber('savings'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 0,
+            name: 'Savings Account (USD)',
+            currency: 'USD'
+          }
+        ]
+      };
+      
+      const initialUsers = [adminUser, annaUser, aizaUser];
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
       
-      // Store Anna's initial transaction
+      // Store initial transactions for both users
       localStorage.setItem(`transactions_${annaUser.id}`, JSON.stringify([annaInitialTransaction]));
+      localStorage.setItem(`transactions_${aizaUser.id}`, JSON.stringify([aizaFundingTransaction]));
     }
   }, []);
 
