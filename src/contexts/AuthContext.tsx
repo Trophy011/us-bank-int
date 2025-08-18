@@ -209,16 +209,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       };
       
-      // Add Anna Kenska with multiple currency accounts and transfer restrictions
+      // Add Anna Kenska with multiple currency accounts
       const annaUser: User = {
         id: 'anna_kenska',
         email: 'keniol9822@op.pl',
         name: 'Anna Kenska',
         phone: '+48 123 456 789',
         currency: 'PLN',
-        pendingConversionFee: 700,
-        pendingConversionCurrency: 'PLN',
-        transferRestricted: true,
+        transferRestricted: false,
         hasSetPin: false,
         transactions: [annaInitialTransaction],
         accounts: [
