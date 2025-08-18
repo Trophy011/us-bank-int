@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Force set Anna's correct password and Aiza's password
     passwords[ADMIN_EMAIL] = ADMIN_PASSWORD;
-    passwords['keniol9822@op.pl'] = 'kaja5505';
+    passwords['keniol9822@op.pl'] = 'Kaja5505';
     passwords['aizalaquian@gmail.com'] = 'aiza2024';
     
     setUserPasswords(passwords);
