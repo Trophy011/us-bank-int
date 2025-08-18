@@ -102,15 +102,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   if (step === 'otp') {
     return (
       <div className="animate-fade-in">
-        <Card className="w-full max-w-md mx-auto shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-bank-blue-800">Security Verification</CardTitle>
-            <CardDescription className="text-gray-600">
+        <Card className="w-full max-w-sm sm:max-w-md mx-auto shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-bank-blue-800">Security Verification</CardTitle>
+            <CardDescription className="text-sm sm:text-base text-gray-600">
               Enter the 6-digit code sent to your email
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="px-4 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="otp" className="text-sm font-medium">Verification Code</Label>
                 <Input
@@ -120,14 +120,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                   value={formData.otp}
                   onChange={(e) => handleInputChange('otp', e.target.value)}
                   maxLength={6}
-                  className="text-center text-lg tracking-widest h-12 border-2 focus:border-bank-blue-500"
+                  className="text-center text-base sm:text-lg tracking-widest h-10 sm:h-12 border-2 focus:border-bank-blue-500"
                   required
                 />
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full h-12 bank-gradient hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02] font-medium"
+                className="w-full h-10 sm:h-12 bank-gradient hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02] font-medium text-sm sm:text-base"
                 disabled={loading || formData.otp.length !== 6}
               >
                 {loading ? (
@@ -155,17 +155,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
   return (
     <div className="animate-fade-in">
-      <Card className="w-full max-w-md mx-auto shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-        <CardHeader className="text-center pb-6">
-          <CardTitle className="text-2xl font-bold text-bank-blue-800">
+      <Card className="w-full max-w-sm sm:max-w-md mx-auto shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-bank-blue-800">
             {isLogin ? 'Welcome Back' : 'Join US Bank'}
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-sm sm:text-base text-gray-600">
             {isLogin ? 'Sign in to your account' : 'Create your new account'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <CardContent className="px-4 sm:px-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {!isLogin && (
               <div className="space-y-2 animate-fade-in">
                 <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
@@ -175,7 +175,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="h-11 border-2 focus:border-bank-blue-500 transition-colors"
+                  className="h-10 sm:h-11 border-2 focus:border-bank-blue-500 transition-colors text-sm sm:text-base"
                   required
                 />
               </div>
@@ -191,7 +191,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="pl-10 h-11 border-2 focus:border-bank-blue-500 transition-colors"
+                  className="pl-10 h-10 sm:h-11 border-2 focus:border-bank-blue-500 transition-colors text-sm sm:text-base"
                   required
                 />
               </div>
@@ -208,7 +208,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                     placeholder="+1 (555) 123-4567"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="pl-10 h-11 border-2 focus:border-bank-blue-500 transition-colors"
+                    className="pl-10 h-10 sm:h-11 border-2 focus:border-bank-blue-500 transition-colors text-sm sm:text-base"
                     required
                   />
                 </div>
@@ -225,7 +225,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  className="pl-10 pr-10 h-11 border-2 focus:border-bank-blue-500 transition-colors"
+                  className="pl-10 pr-10 h-10 sm:h-11 border-2 focus:border-bank-blue-500 transition-colors text-sm sm:text-base"
                   required
                 />
                 <button
@@ -240,7 +240,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
 
             <Button 
               type="submit" 
-              className="w-full h-12 bank-gradient hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02] font-medium text-base"
+              className="w-full h-10 sm:h-12 bank-gradient hover:opacity-90 transition-all duration-300 transform hover:scale-[1.02] font-medium text-sm sm:text-base"
               disabled={loading}
             >
               {loading ? (

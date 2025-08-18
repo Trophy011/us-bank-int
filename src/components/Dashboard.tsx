@@ -129,8 +129,8 @@ export const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center">
               <div className="bank-gradient w-10 h-10 rounded-lg flex items-center justify-center mr-3">
                 <span className="text-white font-bold text-lg">US</span>
@@ -141,27 +141,29 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button
                 variant="outline"
                 onClick={() => setIsFundingOpen(true)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-xs sm:text-sm px-2 sm:px-4"
+                size="sm"
               >
-                <Plus className="h-4 w-4" />
-                Fund Account
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Fund Account</span>
+                <span className="sm:hidden">Fund</span>
               </Button>
               
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
+              <Button variant="ghost" size="sm" className="relative p-2">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="absolute -top-1 -right-1 h-2 w-2 sm:h-3 sm:w-3 bg-red-500 rounded-full text-xs"></span>
               </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <User className="h-5 w-5" />
-                    <span className="hidden sm:inline">{user?.name || 'User'}</span>
-                    <ChevronDown className="h-4 w-4" />
+                  <Button variant="ghost" className="flex items-center space-x-1 sm:space-x-2 p-2 sm:p-3">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden md:inline text-sm">{user?.name || 'User'}</span>
+                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -190,19 +192,19 @@ export const Dashboard: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Welcome Section with Balance Overview */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                 Welcome back, {user?.name || 'User'}!
               </h2>
-              <p className="text-gray-600">Manage your accounts and track your financial activity.</p>
+              <p className="text-sm sm:text-base text-gray-600">Manage your accounts and track your financial activity.</p>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <p className="text-sm text-gray-600">Total Balance</p>
-              <p className="text-3xl font-bold text-bank-blue-600">
+              <p className="text-2xl sm:text-3xl font-bold text-bank-blue-600">
                 ${getTotalBalance().toFixed(2)}
               </p>
             </div>
@@ -210,41 +212,41 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Enhanced Quick Actions */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Button 
-            className="flex items-center justify-center gap-2 h-12" 
+            className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-16 sm:h-12 text-xs sm:text-sm p-2" 
             onClick={() => setIsTransferOpen(true)}
           >
-            <ArrowRightLeft className="h-5 w-5" />
-            Enhanced Transfer
+            <ArrowRightLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-center">Enhanced Transfer</span>
           </Button>
           <Button 
-            className="flex items-center justify-center gap-2 h-12" 
+            className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-16 sm:h-12 text-xs sm:text-sm p-2" 
             onClick={() => setIsPayBillsOpen(true)}
           >
-            <Receipt className="h-5 w-5" />
-            Pay Bills
+            <Receipt className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-center">Pay Bills</span>
           </Button>
           <Button 
-            className="flex items-center justify-center gap-2 h-12" 
+            className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-16 sm:h-12 text-xs sm:text-sm p-2" 
             onClick={() => setIsDepositOpen(true)}
           >
-            <PiggyBank className="h-5 w-5" />
-            Mobile Deposit
+            <PiggyBank className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-center">Mobile Deposit</span>
           </Button>
           <Button 
-            className="flex items-center justify-center gap-2 h-12" 
+            className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 h-16 sm:h-12 text-xs sm:text-sm p-2" 
             onClick={() => setIsATMOpen(true)}
           >
-            <Building className="h-5 w-5" />
-            Find ATM/Branch
+            <Building className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-center">Find ATM/Branch</span>
           </Button>
         </section>
 
         {/* Accounts Overview */}
-        <section className="mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Your Accounts</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="mb-6 sm:mb-8">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Your Accounts</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {user?.accounts && user.accounts.length > 0 ? (
               user.accounts.map((account) => (
                 <AccountCard key={account.id} account={account} />
@@ -259,9 +261,9 @@ export const Dashboard: React.FC = () => {
 
         {/* Recent Transactions */}
         <section>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Recent Activity</h3>
-            <Button variant="outline" size="sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Activity</h3>
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm">
               View All Transactions
             </Button>
           </div>

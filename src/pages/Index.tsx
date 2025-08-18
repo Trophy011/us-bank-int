@@ -33,7 +33,7 @@ const AppContent = () => {
 
   console.log('Rendering Login Form');
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bank-blue-50 via-white to-bank-blue-100 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-bank-blue-50 via-white to-bank-blue-100 flex items-center justify-center p-4 sm:p-6 md:p-8 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-bank-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
@@ -41,7 +41,7 @@ const AppContent = () => {
         <div className="absolute top-40 left-1/2 w-80 h-80 bg-bank-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
       </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-sm sm:max-w-md relative z-10">
         {/* Logo and Brand */}
         <div className="text-center mb-8 animate-fade-in">
           <div className="bank-gradient w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-all duration-300">
