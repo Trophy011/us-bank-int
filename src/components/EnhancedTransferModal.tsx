@@ -491,7 +491,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
             </Card>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 border-t mt-4 sticky bottom-0 bg-white">
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancel
               </Button>
