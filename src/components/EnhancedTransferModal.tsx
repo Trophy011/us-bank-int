@@ -474,7 +474,11 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
                 onChange={(e) => setMemo(e.target.value)}
               />
             </div>
-
+            
+            <Dialog>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
+                {/* All your dialog content here */}
+    
             {/* Action Buttons */}
             <div className="flex gap-0 pt-0 border-t mt-0">
               <Button variant="outline" onClick={onClose} className="flex-1">
