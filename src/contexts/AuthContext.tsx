@@ -363,7 +363,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("user", JSON.stringify(updatedUser));
 
     return updatedUser;
-  });
     };
   
     setUser(updatedUser);
