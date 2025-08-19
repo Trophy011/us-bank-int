@@ -350,8 +350,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Inside AuthContext.tsx
-
-const updateAccountBalance = (accountId: string, newBalance: number) => {
+    
+    const updateAccountBalance = (accountId: string, newBalance: number) => {
   setUser((prevUser) => {
     if (!prevUser) return prevUser;
 
@@ -366,8 +366,8 @@ const updateAccountBalance = (accountId: string, newBalance: number) => {
 
     return updatedUser;
   });
-};
-    
+    };
+  
     setUser(updatedUser);
     localStorage.setItem('bankUser', JSON.stringify(updatedUser));
     
