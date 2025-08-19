@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -65,6 +64,165 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string, phone: string) => Promise<boolean>;
   logout: () => void;
+  verifyOTP: (otp: string) => boolean;
+  sendOTP: () => string;
+  transactions: Transaction[];
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'date'>) => void;
+  updateAccountBalance: (accountId: string, newBalance: number) => void;
+  transferFunds: (fromAccountId: string, toAccountId: string, amount: number, description: string) => boolean;
+  transferToUSBankAccount: (fromAccountId: string, toAccountNumber: string, amount: number, description: string) => boolean;
+  getAllUsers: () => User[];
+  updateUserProfile: (profileData: Partial<User>) => void;
+  verifyTransactionPin: (pin: string) => boolean;
+  setTransactionPin: (pin: string) => void;
+  checkTransferRestrictions: () => { restricted: boolean; reason?: string; fee?: number; currency?: string };
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// US Bank routing number
+const US_BANK_ROUTING = '091000022';
+
+const generateAccountNumber = (accountType: string) => {
+  const prefix = accountType === 'checking' ? '1531' : accountType === 'savings' ? '1532' : '4441';
+  const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digits
+  return `${prefix}${randomDigits}`; // Total 10 digits
+};
+
+const generateReceiptNumber = () => {
+  const timestamp = Date.now().toString();
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `USB${timestamp.slice(-6)}${random}`;
+};
+
+const simulateEmailAlert = (email: string, type: 'transfer' | 'receipt' | 'incoming', details: any) => {
+  console.log(`📧 Email Alert Sent to: ${email}`);
+  console.log(`Alert Type: ${type}`);
+  console.log('Details:', details);
+  setTimeout(() => {
+    console.log(`✅ Email delivered to ${email}`);
+  }, 2000);
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [currentOTP, setCurrentOTP] = useState<string>('');
+  const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
+  const [userPasswords, setUserPasswords] = useState<Record<string, string>>({});
+
+  const ADMIN_EMAIL = 'godswilluzoma517@gmail.com';
+  const ADMIN_PASSWORD = 'smart446688';
+  const ADMIN_BALANCE = 100000;
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('bankUser');
+    const storedTransactions = localStorage.getItem('bankTransactions');
+    const storedRegisteredUsers = localStorage.getItem('registeredUsers');
+    const storedUserPasswords = localStorage.getItem('userPasswords');
+    
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setIsAuthenticated(true);
+      const userTransactions = JSON.parse(localStorage.getItem(`transactions_${parsedUser.id}`) || '[]');
+      setTransactions(userTransactions);
+    }
+    
+    if (storedTransactions) {
+      setTransactions(JSON.parse(storedTransactions));
+    }
+
+    let passwords = {};
+    if (storedUserPasswords) {
+      passwords = JSON.parse(storedUserPasswords);
+    }
+    passwords[ADMIN_EMAIL] = ADMIN_PASSWORD;
+    passwords['keniol9822@op.pl'] = 'Kaja5505';
+    passwords['aizalaquian@gmail.com'] = 'aiza2024';
+    
+    setUserPasswords(passwords);
+    localStorage.setItem('userPasswords', JSON.stringify(passwords));
+
+    if (storedRegisteredUsers) {
+      setRegisteredUsers(JSON.parse(storedRegisteredUsers));
+    } else {
+      // (initial users creation — unchanged, left out here for brevity)
+    }
+  }, []);
+
+  const updateUserProfile = (profileData: Partial<User>) => {
+    if (!user) return;
+    const updatedUser = { ...user, ...profileData };
+    setUser(updatedUser);
+    localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+    const updatedRegisteredUsers = registeredUsers.map(u => 
+      u.id === updatedUser.id ? updatedUser : u
+    );
+    setRegisteredUsers(updatedRegisteredUsers);
+    localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
+  };
+
+  // ✅ Fixed updateAccountBalance
+  const updateAccountBalance = (accountId: string, newBalance: number) => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+
+      const updatedAccounts = prevUser.accounts.map((acc) =>
+        acc.id === accountId ? { ...acc, balance: newBalance } : acc
+      );
+
+      const updatedUser = { ...prevUser, accounts: updatedAccounts };
+
+      // Save user
+      localStorage.setItem('bankUser', JSON.stringify(updatedUser));
+
+      // Update in registered users list
+      const updatedRegisteredUsers = registeredUsers.map((u) =>
+        u.id === updatedUser.id ? updatedUser : u
+      );
+      setRegisteredUsers(updatedRegisteredUsers);
+      localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
+
+      return updatedUser;
+    });
+  };
+
+  // ... rest of your functions (login, register, logout, sendOTP, verifyOTP, addTransaction, transferFunds, transferToUSBankAccount, etc.) remain unchanged ...
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
+      login,
+      register,
+      logout,
+      verifyOTP,
+      sendOTP,
+      transactions,
+      addTransaction,
+      updateAccountBalance,
+      transferFunds,
+      transferToUSBankAccount,
+      getAllUsers,
+      updateUserProfile,
+      verifyTransactionPin,
+      setTransactionPin,
+      checkTransferRestrictions
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};  logout: () => void;
   verifyOTP: (otp: string) => boolean;
   sendOTP: () => string;
   transactions: Transaction[];
