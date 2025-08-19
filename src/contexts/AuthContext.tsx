@@ -349,17 +349,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
   };
 
-  const updateAccountBalance = (accountId: string, newBalance: number) => {
-    if (!user) return;
-    
-    console.log(`Updating balance for account ${accountId} to ${newBalance}`);
-    
-    const updatedUser = {
-      ...user,
-      accounts: user.accounts.map(account => 
-        account.id === accountId ? { ...account, balance: newBalance } : account
-      )
-    };
+  // Inside AuthContext.tsx
+
+const updateAccountBalance = (accountId: string, newBalance: number) => {
+  setUser((prevUser) => {
+    if (!prevUser) return prevUser;
+
+    const updatedAccounts = prevUser.accounts.map((acc) =>
+      acc.id === accountId ? { ...acc, balance: newBalance } : acc
+    );
+
+    const updatedUser = { ...prevUser, accounts: updatedAccounts };
+
+    // ✅ Save to localStorage so balance persists after refresh
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    return updatedUser;
+  });
+};
     
     setUser(updatedUser);
     localStorage.setItem('bankUser', JSON.stringify(updatedUser));
