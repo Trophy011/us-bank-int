@@ -742,6 +742,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   };
 
+  type Transaction = {
+  id: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  type: "debit" | "credit";
+  date: string;
+  };
+
   const updateUserBalance = (userId: string, accountId: string, newBalance: number) => {
     const updatedUsers = registeredUsers.map(usr => {
       if (usr.id === userId) {
