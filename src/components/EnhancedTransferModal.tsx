@@ -475,21 +475,6 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
               />
             </div>
 
-            {/* Transfer Speed Indicator */}
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className={transferSpeed.color}>{transferSpeed.icon}</span>
-                    <span className="text-sm font-medium">Transfer Speed:</span>
-                  </div>
-                  <Badge variant="outline" className={transferSpeed.color}>
-                    {transferSpeed.text}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t mt-6">
               <Button variant="outline" onClick={onClose} className="flex-1">
