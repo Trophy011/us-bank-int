@@ -476,7 +476,7 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
             </div>
            
             {/* Action Buttons */}
-            <div className="flex flex-col gap-4 pt-6 border-t mt-8">
+            <div className="flex flex-col gap-4 pt-6 border-t mt-4 sticky bottom-0 bg-white">
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancel
               </Button>
