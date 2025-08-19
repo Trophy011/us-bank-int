@@ -497,7 +497,9 @@ export const EnhancedTransferModal: React.FC<EnhancedTransferModalProps> = ({ is
               </Button>
               <Button 
                 onClick={handleTransfer} 
-                disabled={isLoading || !fromAccount || !toAccount || !amount || restrictions.restricted}
+                disabled={isLoading || !fromAccount || !toAccount || !amount || parseFloat(amount) <= 0 || 
+                  (restrictions.restricted && !restrictions.fee) ||
+                  (transferType === 'external' && (!selectedCountry || !selectedBank || !recipientName))}
                 className="flex-1"
               >
                 {isLoading ? 'Processing...' : 'Transfer Money'}
