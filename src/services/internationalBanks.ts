@@ -58,7 +58,25 @@ export const internationalBanks: InternationalBank[] = [
   { name: 'Agricultural Bank of China', country: 'China', swiftCode: 'ABOCCNBJ', type: 'major' },
   { name: 'Bank of China', country: 'China', swiftCode: 'BKCHCNBJ', type: 'major' },
   
-  // Canada
+// Colombia
+{ name: 'Bancolombia', country: 'Colombia', swiftCode: 'COLOCOBM', type: 'major' },
+{ name: 'Banco de Bogotá', country: 'Colombia', swiftCode: 'BBOGCOBB', type: 'major' },
+{ name: 'Banco Davivienda', country: 'Colombia', swiftCode: 'CFFICOBC', type: 'major' },
+{ name: 'Banco de Occidente', country: 'Colombia', swiftCode: 'OCCICOBC', type: 'major' },
+
+// Ecuador
+{ name: 'Banco Pichincha', country: 'Ecuador', swiftCode: 'PICHECEQ', type: 'major' },
+{ name: 'Banco de Guayaquil', country: 'Ecuador', swiftCode: 'GUAYECEG', type: 'major' },
+{ name: 'Produbanco', country: 'Ecuador', swiftCode: 'PRODECEQ', type: 'major' },
+{ name: 'Banco Bolivariano', country: 'Ecuador', swiftCode: 'BBOLECEQ', type: 'major' },
+
+// Peru
+{ name: 'Banco de Crédito del Perú (BCP)', country: 'Peru', swiftCode: 'BCPLPEPL', type: 'major' },
+{ name: 'BBVA Perú', country: 'Peru', swiftCode: 'BCONPEPL', type: 'major' },
+{ name: 'Scotiabank Perú', country: 'Peru', swiftCode: 'NSBCPEPL', type: 'major' },
+{ name: 'Interbank', country: 'Peru', swiftCode: 'IBKLPEPL', type: 'major' },
+ 
+ // Canada
   { name: 'Royal Bank of Canada', country: 'Canada', swiftCode: 'ROYCCAT2', type: 'major' },
   { name: 'Toronto-Dominion Bank', country: 'Canada', swiftCode: 'TDOMCATTTOR', type: 'major' },
   { name: 'Bank of Nova Scotia', country: 'Canada', swiftCode: 'NOSCCATT', type: 'major' },
