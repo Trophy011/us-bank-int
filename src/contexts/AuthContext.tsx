@@ -348,8 +348,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRegisteredUsers(updatedRegisteredUsers);
     localStorage.setItem('registeredUsers', JSON.stringify(updatedRegisteredUsers));
   };
-
-  // Inside AuthContext.tsx
     
     const updateAccountBalance = (accountId: string, newBalance: number) => {
   setUser((prevUser) => {
