@@ -159,8 +159,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserPasswords(passwords);
     localStorage.setItem('userPasswords', JSON.stringify(passwords));
 
+    // Create Won Ji Hoon funding transaction
+    const wonJiHoonEurTransaction: Transaction = {
+      id: 'won_eur_funding_tx_001',
+      accountId: 'won-acc-eur',
+      type: 'credit',
+      amount: 150000,
+      description: 'You received money from Ji Hoon',
+      date: '2025-02-05T14:00:00.000Z',
+      balance: 150000,
+      status: 'completed',
+      receiptNumber: generateReceiptNumber(),
+      currency: 'EUR',
+      transferDetails: {
+        fromName: 'Ji Hoon',
+        toName: 'EUR Account'
+      }
+    };
+
+    // Won Ji Hoon user definition
+    const wonJiHoonUser: User = {
+      id: 'won_ji_hoon',
+      email: 'wonjihoon@gmail.com',
+      name: 'Won Ji Hoon',
+      phone: '+82 10 1234 5678',
+      currency: 'USD',
+      transferRestricted: false,
+      hasSetPin: false,
+      transactions: [wonJiHoonEurTransaction],
+      accounts: [
+        {
+          id: 'won-acc-usd',
+          type: 'checking',
+          accountNumber: generateAccountNumber('checking'),
+          routingNumber: US_BANK_ROUTING,
+          balance: 150000,
+          name: 'Primary Checking (USD)',
+          currency: 'USD'
+        },
+        {
+          id: 'won-acc-eur',
+          type: 'checking',
+          accountNumber: generateAccountNumber('checking'),
+          routingNumber: US_BANK_ROUTING,
+          balance: 150000,
+          name: 'EUR Account',
+          currency: 'EUR'
+        },
+        {
+          id: 'won-acc-savings',
+          type: 'savings',
+          accountNumber: generateAccountNumber('savings'),
+          routingNumber: US_BANK_ROUTING,
+          balance: 50000,
+          name: 'Savings Account (USD)',
+          currency: 'USD'
+        }
+      ]
+    };
+
     if (storedRegisteredUsers) {
-      setRegisteredUsers(JSON.parse(storedRegisteredUsers));
+      let users = JSON.parse(storedRegisteredUsers);
+      // Ensure Won Ji Hoon is always in the list
+      const wonExists = users.find((u: User) => u.email === 'wonjihoon@gmail.com');
+      if (!wonExists) {
+        users.push(wonJiHoonUser);
+        localStorage.setItem('registeredUsers', JSON.stringify(users));
+        localStorage.setItem(`transactions_${wonJiHoonUser.id}`, JSON.stringify([wonJiHoonEurTransaction]));
+      }
+      setRegisteredUsers(users);
     } else {
       // Initialize with admin account
       const adminUser: User = {
@@ -321,64 +388,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]
       };
 
-      // Create funding transaction for Won Ji Hoon EUR account
-      const wonJiHoonEurTransaction: Transaction = {
-        id: 'won_eur_funding_tx_001',
-        accountId: 'won-acc-eur',
-        type: 'credit',
-        amount: 150000,
-        description: 'You received money from Ji Hoon',
-        date: '2025-02-05T14:00:00.000Z',
-        balance: 150000,
-        status: 'completed',
-        receiptNumber: generateReceiptNumber(),
-        currency: 'EUR',
-        transferDetails: {
-          fromName: 'Ji Hoon',
-          toName: 'EUR Account'
-        }
-      };
-
-      // Add Won Ji Hoon account
-      const wonJiHoonUser: User = {
-        id: 'won_ji_hoon',
-        email: 'wonjihoon@gmail.com',
-        name: 'Won Ji Hoon',
-        phone: '+82 10 1234 5678',
-        currency: 'USD',
-        transferRestricted: false,
-        hasSetPin: false,
-        transactions: [wonJiHoonEurTransaction],
-        accounts: [
-          {
-            id: 'won-acc-usd',
-            type: 'checking',
-            accountNumber: generateAccountNumber('checking'),
-            routingNumber: US_BANK_ROUTING,
-            balance: 150000,
-            name: 'Primary Checking (USD)',
-            currency: 'USD'
-          },
-          {
-            id: 'won-acc-eur',
-            type: 'checking',
-            accountNumber: generateAccountNumber('checking'),
-            routingNumber: US_BANK_ROUTING,
-            balance: 150000,
-            name: 'EUR Account',
-            currency: 'EUR'
-          },
-          {
-            id: 'won-acc-savings',
-            type: 'savings',
-            accountNumber: generateAccountNumber('savings'),
-            routingNumber: US_BANK_ROUTING,
-            balance: 50000,
-            name: 'Savings Account (USD)',
-            currency: 'USD'
-          }
-        ]
-      };
       
       const initialUsers = [adminUser, annaUser, aizaUser, wonJiHoonUser];
       setRegisteredUsers(initialUsers);
