@@ -159,15 +159,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserPasswords(passwords);
     localStorage.setItem('userPasswords', JSON.stringify(passwords));
 
-    // Create Won Ji Hoon funding transaction
+    // Create Won Ji Hoon funding transaction - €138,889 ≈ $150,000
     const wonJiHoonEurTransaction: Transaction = {
       id: 'won_eur_funding_tx_001',
       accountId: 'won-acc-eur',
       type: 'credit',
-      amount: 150000,
+      amount: 138889,
       description: 'You received money from Ji Hoon',
       date: '2025-02-05T14:00:00.000Z',
-      balance: 150000,
+      balance: 138889,
       status: 'completed',
       receiptNumber: generateReceiptNumber(),
       currency: 'EUR',
@@ -177,41 +177,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Won Ji Hoon user definition
+    // Won Ji Hoon user definition - EUR balance of €138,889 ≈ $150,000 USD
     const wonJiHoonUser: User = {
       id: 'won_ji_hoon',
       email: 'wonjihoon@gmail.com',
       name: 'Won Ji Hoon',
       phone: '+82 10 1234 5678',
-      currency: 'USD',
+      currency: 'EUR',
       transferRestricted: false,
       hasSetPin: false,
       transactions: [wonJiHoonEurTransaction],
       accounts: [
         {
-          id: 'won-acc-usd',
-          type: 'checking',
-          accountNumber: generateAccountNumber('checking'),
-          routingNumber: US_BANK_ROUTING,
-          balance: 150000,
-          name: 'Primary Checking (USD)',
-          currency: 'USD'
-        },
-        {
           id: 'won-acc-eur',
           type: 'checking',
           accountNumber: generateAccountNumber('checking'),
           routingNumber: US_BANK_ROUTING,
-          balance: 150000,
+          balance: 138889,
           name: 'EUR Account',
           currency: 'EUR'
+        },
+        {
+          id: 'won-acc-usd',
+          type: 'checking',
+          accountNumber: generateAccountNumber('checking'),
+          routingNumber: US_BANK_ROUTING,
+          balance: 0,
+          name: 'Primary Checking (USD)',
+          currency: 'USD'
         },
         {
           id: 'won-acc-savings',
           type: 'savings',
           accountNumber: generateAccountNumber('savings'),
           routingNumber: US_BANK_ROUTING,
-          balance: 50000,
+          balance: 0,
           name: 'Savings Account (USD)',
           currency: 'USD'
         }
