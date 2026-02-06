@@ -110,7 +110,18 @@ export const Dashboard: React.FC = () => {
   };
 
   const getTotalBalance = () => {
-    return user?.accounts?.reduce((total, account) => total + (account.balance || 0), 0) || 0;
+    // Currency conversion rates to USD
+    const conversionRates: Record<string, number> = {
+      'USD': 1,
+      'EUR': 1.08,  // 1 EUR = 1.08 USD
+      'GBP': 1.27,  // 1 GBP = 1.27 USD
+      'PLN': 0.24   // 1 PLN = 0.24 USD
+    };
+    
+    return user?.accounts?.reduce((total, account) => {
+      const rate = conversionRates[account.currency || 'USD'] || 1;
+      return total + ((account.balance || 0) * rate);
+    }, 0) || 0;
   };
 
   // Show loading state if user is not available
