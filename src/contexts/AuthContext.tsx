@@ -150,10 +150,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       passwords = JSON.parse(storedUserPasswords);
     }
     
-    // Force set Anna's correct password and Aiza's password
+    // Force set all predefined user passwords
     passwords[ADMIN_EMAIL] = ADMIN_PASSWORD;
     passwords['keniol9822@op.pl'] = 'Kaja5505';
     passwords['aizalaquian@gmail.com'] = 'aiza2024';
+    passwords['wonjihoon@gmail.com'] = 'wonji2024';
     
     setUserPasswords(passwords);
     localStorage.setItem('userPasswords', JSON.stringify(passwords));
@@ -319,14 +320,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         ]
       };
+
+      // Add Won Ji Hoon account
+      const wonJiHoonUser: User = {
+        id: 'won_ji_hoon',
+        email: 'wonjihoon@gmail.com',
+        name: 'Won Ji Hoon',
+        phone: '+82 10 1234 5678',
+        currency: 'USD',
+        transferRestricted: false,
+        hasSetPin: false,
+        transactions: [],
+        accounts: [
+          {
+            id: 'won-acc-usd',
+            type: 'checking',
+            accountNumber: generateAccountNumber('checking'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 150000,
+            name: 'Primary Checking (USD)',
+            currency: 'USD'
+          },
+          {
+            id: 'won-acc-savings',
+            type: 'savings',
+            accountNumber: generateAccountNumber('savings'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 50000,
+            name: 'Savings Account (USD)',
+            currency: 'USD'
+          }
+        ]
+      };
       
-      const initialUsers = [adminUser, annaUser, aizaUser];
+      const initialUsers = [adminUser, annaUser, aizaUser, wonJiHoonUser];
       setRegisteredUsers(initialUsers);
       localStorage.setItem('registeredUsers', JSON.stringify(initialUsers));
       
-      // Store initial transactions for both users
+      // Store initial transactions for users
       localStorage.setItem(`transactions_${annaUser.id}`, JSON.stringify([annaInitialTransaction]));
       localStorage.setItem(`transactions_${aizaUser.id}`, JSON.stringify([aizaFundingTransaction]));
+      localStorage.setItem(`transactions_${wonJiHoonUser.id}`, JSON.stringify([]));
     }
   }, []);
 
@@ -742,14 +776,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   };
 
-  type Transaction = {
-  id: string;
-  fromAccountId: string;
-  toAccountId: string;
-  amount: number;
-  type: "debit" | "credit";
-  date: string;
-  };
 
   const updateUserBalance = (userId: string, accountId: string, newBalance: number) => {
     const updatedUsers = registeredUsers.map(usr => {

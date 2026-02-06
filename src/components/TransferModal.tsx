@@ -125,7 +125,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
       // 🔹 Sender transaction
       const senderTx = {
         accountId: fromAccount,
-        type: 'transfer',
+        type: 'transfer' as const,
         amount: -transferAmount,
         description: `Transfer to ${finalRecipientName}`,
         balance: sourceAccount.balance - transferAmount,
@@ -145,7 +145,7 @@ export const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose })
       if (lookupResult) {
         const recipientTx = {
           accountId: fromAccount, // (should be recipient's accountId in real system)
-          type: 'transfer',
+          type: 'transfer' as const,
           amount: transferAmount,
           description: `Transfer from ${user?.name}`,
           balance: sourceAccount.balance,
