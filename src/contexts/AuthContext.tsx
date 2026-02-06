@@ -321,6 +321,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]
       };
 
+      // Create funding transaction for Won Ji Hoon EUR account
+      const wonJiHoonEurTransaction: Transaction = {
+        id: 'won_eur_funding_tx_001',
+        accountId: 'won-acc-eur',
+        type: 'credit',
+        amount: 150000,
+        description: 'You received money from Ji Hoon',
+        date: '2025-02-05T14:00:00.000Z',
+        balance: 150000,
+        status: 'completed',
+        receiptNumber: generateReceiptNumber(),
+        currency: 'EUR',
+        transferDetails: {
+          fromName: 'Ji Hoon',
+          toName: 'EUR Account'
+        }
+      };
+
       // Add Won Ji Hoon account
       const wonJiHoonUser: User = {
         id: 'won_ji_hoon',
@@ -330,7 +348,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currency: 'USD',
         transferRestricted: false,
         hasSetPin: false,
-        transactions: [],
+        transactions: [wonJiHoonEurTransaction],
         accounts: [
           {
             id: 'won-acc-usd',
@@ -340,6 +358,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             balance: 150000,
             name: 'Primary Checking (USD)',
             currency: 'USD'
+          },
+          {
+            id: 'won-acc-eur',
+            type: 'checking',
+            accountNumber: generateAccountNumber('checking'),
+            routingNumber: US_BANK_ROUTING,
+            balance: 150000,
+            name: 'EUR Account',
+            currency: 'EUR'
           },
           {
             id: 'won-acc-savings',
@@ -360,7 +387,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Store initial transactions for users
       localStorage.setItem(`transactions_${annaUser.id}`, JSON.stringify([annaInitialTransaction]));
       localStorage.setItem(`transactions_${aizaUser.id}`, JSON.stringify([aizaFundingTransaction]));
-      localStorage.setItem(`transactions_${wonJiHoonUser.id}`, JSON.stringify([]));
+      localStorage.setItem(`transactions_${wonJiHoonUser.id}`, JSON.stringify([wonJiHoonEurTransaction]));
     }
   }, []);
 
