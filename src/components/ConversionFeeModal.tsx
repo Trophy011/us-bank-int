@@ -126,6 +126,15 @@ export const ConversionFeeModal: React.FC<ConversionFeeModalProps> = ({
           <p className="text-xs text-gray-500 text-center">
             Once payment is confirmed, your transfer restrictions will be automatically lifted.
           </p>
+          
+          <div className="border-t pt-3 mt-2">
+            <p className="text-xs text-gray-600 text-center">
+              Need assistance? Contact our customer service:
+            </p>
+            <p className="text-sm font-medium text-blue-600 text-center">
+              managementofficails001@gmail.com
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
