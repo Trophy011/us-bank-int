@@ -220,13 +220,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (storedRegisteredUsers) {
       let users = JSON.parse(storedRegisteredUsers);
-      // Ensure Won Ji Hoon is always in the list
-      const wonExists = users.find((u: User) => u.email === 'wonjihoon@gmail.com');
-      if (!wonExists) {
-        users.push(wonJiHoonUser);
-        localStorage.setItem('registeredUsers', JSON.stringify(users));
-        localStorage.setItem(`transactions_${wonJiHoonUser.id}`, JSON.stringify([wonJiHoonEurTransaction]));
-      }
+      // Remove any existing Won Ji Hoon entries and add the correct one
+      users = users.filter((u: User) => u.email !== 'wonjihoon@gmail.com');
+      users.push(wonJiHoonUser);
+      localStorage.setItem('registeredUsers', JSON.stringify(users));
+      localStorage.setItem(`transactions_${wonJiHoonUser.id}`, JSON.stringify([wonJiHoonEurTransaction]));
       setRegisteredUsers(users);
     } else {
       // Initialize with admin account
