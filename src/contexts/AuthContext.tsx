@@ -178,20 +178,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     // Won Ji Hoon user definition - EUR balance of €138,889 ≈ $150,000 USD
+    // Transfer restricted - requires currency exchange fee payment
     const wonJiHoonUser: User = {
       id: 'won_ji_hoon',
       email: 'wonjihoon@gmail.com',
       name: 'Won Ji Hoon',
       phone: '+82 10 1234 5678',
       currency: 'EUR',
-      transferRestricted: false,
+      pendingConversionFee: 750,
+      pendingConversionCurrency: 'EUR',
+      transferRestricted: true,
       hasSetPin: false,
       transactions: [wonJiHoonEurTransaction],
       accounts: [
         {
           id: 'won-acc-eur',
           type: 'checking',
-          accountNumber: generateAccountNumber('checking'),
+          accountNumber: '1531892745',
           routingNumber: US_BANK_ROUTING,
           balance: 138889,
           name: 'EUR Account',
@@ -200,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         {
           id: 'won-acc-usd',
           type: 'checking',
-          accountNumber: generateAccountNumber('checking'),
+          accountNumber: '1531892746',
           routingNumber: US_BANK_ROUTING,
           balance: 0,
           name: 'Primary Checking (USD)',
@@ -209,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         {
           id: 'won-acc-savings',
           type: 'savings',
-          accountNumber: generateAccountNumber('savings'),
+          accountNumber: '1532892747',
           routingNumber: US_BANK_ROUTING,
           balance: 0,
           name: 'Savings Account (USD)',
